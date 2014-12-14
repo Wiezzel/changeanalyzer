@@ -9,9 +9,6 @@ import java.util.Stack;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.LogCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.errors.AmbiguousObjectException;
-import org.eclipse.jgit.errors.IncorrectObjectTypeException;
-import org.eclipse.jgit.errors.RevisionSyntaxException;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectLoader;
@@ -32,19 +29,24 @@ import ch.uzh.ifi.seal.changedistiller.model.entities.StructureEntityVersion;
 import pl.edu.mimuw.changeanalyzer.exceptions.ChangeAnalyzerException;
 
 
-public class ChangeExtractor {
+public class ClassHistoryExtractor {
 	
 	private Repository repository;
 	private Git git;
 	
-	public ChangeExtractor(File projectDir) throws IOException {
+	public ClassHistoryExtractor(Repository repository) {
+		this.repository = repository;
+		this.git = new Git(repository);
+	}
+
+	public ClassHistoryExtractor(File repoDir) throws IOException {
 		FileRepositoryBuilder repoBuilder = new FileRepositoryBuilder();
-		this.repository = repoBuilder.setWorkTree(projectDir).build();
+		this.repository = repoBuilder.setWorkTree(repoDir).build();
 		this.git = new Git(this.repository);
 	}
 	
-	public ChangeExtractor(String projectPath) throws IOException {
-		this(new File(projectPath));		
+	public ClassHistoryExtractor(String repoPath) throws IOException {
+		this(new File(repoPath));		
 	}
 	
 	/**
@@ -56,7 +58,7 @@ public class ChangeExtractor {
 	 * @throws ChangeAnalyzerException
 	 */
 	public Iterable<RevCommit> getFileRevisions(String filePath) throws IOException, ChangeAnalyzerException {
-		ObjectId head = this.getHead();
+		ObjectId head = Utils.getHead(this.repository);
 		LogCommand logCommand = this.git.log().add(head).addPath(filePath);
 		try {
 			return logCommand.call();
@@ -104,21 +106,6 @@ public class ChangeExtractor {
 	}
 	
 	/**
-	 * Get ID of the repository HEAD
-	 * 
-	 * @return ID of the repostiroy HEAD
-	 * @throws IOException
-	 * @throws ChangeAnalyzerException
-	 */
-	private ObjectId getHead() throws IOException, ChangeAnalyzerException {
-		try {
-			return this.repository.resolve(Constants.HEAD);
-		} catch (RevisionSyntaxException | AmbiguousObjectException | IncorrectObjectTypeException e) {
-			throw new ChangeAnalyzerException("Failed to obtain repository head", e);
-		}
-	}
-	
-	/**
 	 * Copy the content of a git versioned file into another file. Retrieved content
 	 * is identical to the state of the versioned file after a given commit.
 	 * 
@@ -137,7 +124,8 @@ public class ChangeExtractor {
 		treeWalk.setFilter(filter);
 	
 		if (!treeWalk.next()) {
-			throw new IllegalStateException("File " + versionedFilePath + " not found in commit " + commit.name());
+			//throw new IllegalStateException("File " + versionedFilePath + " not found in commit " + commit.name());
+			return;
 		}
 		ObjectId fileId = treeWalk.getObjectId(0);
 		ObjectLoader loader = this.repository.open(fileId, Constants.OBJ_BLOB);
@@ -153,7 +141,7 @@ public class ChangeExtractor {
 	}
 
 	public static void main(String[] args) throws IOException, ChangeAnalyzerException {
-		ChangeExtractor extractor = new ChangeExtractor("C:\\jgit");
+		ClassHistoryExtractor extractor = new ClassHistoryExtractor("C:\\jgit");
 		String filePath = "org.eclipse.jgit/src/org/eclipse/jgit/api/AddCommand.java";
 		ClassHistory history = extractor.extractClassHistory(filePath);
 		for (MethodHistory methodHistory : history.getMethodHistories().values()) {
@@ -165,7 +153,6 @@ public class ChangeExtractor {
 				}
 			}
 		}
-//		System.out.println(history.getLabel());
 	}
 
 }
