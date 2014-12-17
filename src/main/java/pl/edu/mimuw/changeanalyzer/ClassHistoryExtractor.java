@@ -65,6 +65,7 @@ public class ClassHistoryExtractor {
 		} catch (GitAPIException e) {
 			throw new ChangeAnalyzerException("Failed to execute LOG command", e);
 		}
+		//TODO: Handle renamed/moved files
 	}
 	
 	/**
@@ -80,7 +81,7 @@ public class ClassHistoryExtractor {
 	public ClassHistory extractClassHistory(String filePath) throws IOException, ChangeAnalyzerException {
 		Stack<RevCommit> commits = new Stack<RevCommit>();
 		for (RevCommit commit: this.getFileRevisions(filePath)) {
-			commits.push(commit);
+			commits.add(commit);
 		}
 		if (commits.size() < 2) {
 			return null;

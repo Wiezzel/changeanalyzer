@@ -5,6 +5,9 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.LogCommand;
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
@@ -16,22 +19,27 @@ import org.eclipse.jgit.treewalk.filter.PathSuffixFilter;
 import org.eclipse.jgit.treewalk.filter.TreeFilter;
 
 import pl.edu.mimuw.changeanalyzer.exceptions.ChangeAnalyzerException;
+import pl.edu.mimuw.changeanalyzer.io.CSVRepoHistoryWriter;
+import pl.edu.mimuw.changeanalyzer.io.RepoHistoryWriter;
 import ch.uzh.ifi.seal.changedistiller.model.entities.ClassHistory;
 
 
 public class RepoHistoryExtractor {
 	
 	private Repository repository;
+	private Git git;
 	private ClassHistoryExtractor extractor;
 	
 	public RepoHistoryExtractor (Repository repository) {
 		this.repository = repository;
+		this.git = new Git(repository);
 		this.extractor = new ClassHistoryExtractor(repository);
 	}
 	
 	public RepoHistoryExtractor (File repoDir) throws IOException {
 		FileRepositoryBuilder repoBuilder = new FileRepositoryBuilder();
 		this.repository = repoBuilder.setWorkTree(repoDir).build();
+		this.git = new Git(this.repository);
 		this.extractor = new ClassHistoryExtractor(this.repository);
 	}
 	
@@ -69,14 +77,40 @@ public class RepoHistoryExtractor {
 		return map;
 	}
 	
+	/**
+	 * Extract all commits which can be achieved from the repostory HEAD.
+	 * 
+	 * @return Extracted commits
+	 * @throws IOException
+	 * @throws ChangeAnalyzerException
+	 */
+	public Iterable<RevCommit> extractRelevantCommits() throws IOException, ChangeAnalyzerException {
+		ObjectId head = Utils.getHead(this.repository);
+		LogCommand logCommand = this.git.log().add(head);
+		try {
+			return logCommand.call();
+		} catch (GitAPIException e) {
+			throw new ChangeAnalyzerException("Failed to execute LOG command", e);
+		}
+	}
+	
 	public static void main(String[] args) throws IOException, ChangeAnalyzerException {
 		RepoHistoryExtractor extractor = new RepoHistoryExtractor("C:\\jgit");
+		RepoHistoryWriter writer = new CSVRepoHistoryWriter("changes.csv", "commits.csv");
+		
 		long startTime = System.currentTimeMillis();
+		
 		Map<String, ClassHistory> map =  extractor.extractClassHistories();
+		ClassHistoryWrapper wrapper = new ClassHistoryWrapper(map.values());
+		Iterable<RevCommit> commits = extractor.extractRelevantCommits();
+		
+		writer.writeChanges(wrapper);
+		writer.writeCommits(commits);
+		writer.close();
+
 		long endTime = System.currentTimeMillis();
 		double execTime = ((double) (endTime - startTime)) / 1000;
 		System.out.println("Execution time: " + execTime + " s");
-		System.out.println(map.size());
 	}
 
 }

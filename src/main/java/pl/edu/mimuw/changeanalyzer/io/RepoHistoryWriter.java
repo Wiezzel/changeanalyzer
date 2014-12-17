@@ -10,8 +10,10 @@ import ch.uzh.ifi.seal.changedistiller.model.entities.MethodHistory;
 
 public interface RepoHistoryWriter {
 	
-	public void writeMethodHistories(Iterable<MethodHistory> histories) throws IOException;
+	public void writeChanges(Iterable<MethodHistory> histories) throws IOException;
 	
 	public void writeCommits(Iterable<RevCommit> commits) throws IOException;
+	
+	public void close() throws IOException;
 
 }
