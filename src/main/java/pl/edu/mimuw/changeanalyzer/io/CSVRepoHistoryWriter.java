@@ -102,7 +102,8 @@ public class CSVRepoHistoryWriter implements RepoHistoryWriter {
 		for (RevCommit commit: commits) {
 			this.commitPrinter.printRecord(new Object[] {
 				commit.getName(),
-				commit.getFullMessage()
+				commit.getFullMessage(),
+				commit.getCommitTime()
 			});
 		}
 	}
