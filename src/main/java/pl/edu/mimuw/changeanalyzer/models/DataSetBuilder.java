@@ -1,4 +1,4 @@
-package pl.edu.mimuw.changeanalyzer;
+package pl.edu.mimuw.changeanalyzer.models;
 
 import java.io.File;
 import java.io.IOException;
@@ -11,6 +11,10 @@ import java.util.Queue;
 import org.eclipse.jgit.revwalk.RevCommit;
 
 import pl.edu.mimuw.changeanalyzer.exceptions.ChangeAnalyzerException;
+import pl.edu.mimuw.changeanalyzer.extraction.ClassHistoryWrapper;
+import pl.edu.mimuw.changeanalyzer.extraction.CommitInfo;
+import pl.edu.mimuw.changeanalyzer.extraction.CommitInfoExtractor;
+import pl.edu.mimuw.changeanalyzer.extraction.RepoHistoryExtractor;
 import weka.core.Attribute;
 import weka.core.FastVector;
 import weka.core.Instance;

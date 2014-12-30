@@ -1,4 +1,4 @@
-package pl.edu.mimuw.changeanalyzer;
+package pl.edu.mimuw.changeanalyzer.extraction;
 
 /**
  * Class containing relevant information about a commit
