@@ -19,14 +19,11 @@ import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.eclipse.jgit.treewalk.filter.PathFilter;
 
+import pl.edu.mimuw.changeanalyzer.exceptions.ChangeAnalyzerException;
 import ch.uzh.ifi.seal.changedistiller.ChangeDistiller;
 import ch.uzh.ifi.seal.changedistiller.ChangeDistiller.Language;
 import ch.uzh.ifi.seal.changedistiller.distilling.FileDistiller;
 import ch.uzh.ifi.seal.changedistiller.model.entities.ClassHistory;
-import ch.uzh.ifi.seal.changedistiller.model.entities.MethodHistory;
-import ch.uzh.ifi.seal.changedistiller.model.entities.SourceCodeChange;
-import ch.uzh.ifi.seal.changedistiller.model.entities.StructureEntityVersion;
-import pl.edu.mimuw.changeanalyzer.exceptions.ChangeAnalyzerException;
 
 
 public class ClassHistoryExtractor {
@@ -125,7 +122,6 @@ public class ClassHistoryExtractor {
 		treeWalk.setFilter(filter);
 	
 		if (!treeWalk.next()) {
-			//throw new IllegalStateException("File " + versionedFilePath + " not found in commit " + commit.name());
 			return;
 		}
 		ObjectId fileId = treeWalk.getObjectId(0);
@@ -138,21 +134,6 @@ public class ClassHistoryExtractor {
 		} catch (IOException e) {
 			stream.close();
 			throw e;
-		}
-	}
-
-	public static void main(String[] args) throws IOException, ChangeAnalyzerException {
-		ClassHistoryExtractor extractor = new ClassHistoryExtractor("C:\\jgit");
-		String filePath = "org.eclipse.jgit/src/org/eclipse/jgit/api/AddCommand.java";
-		ClassHistory history = extractor.extractClassHistory(filePath);
-		for (MethodHistory methodHistory : history.getMethodHistories().values()) {
-			System.out.println("\nHISTORY OF " + methodHistory.getUniqueName() + "\n");
-			for (StructureEntityVersion version : methodHistory.getVersions()) {
-				System.out.println("\nVersion " + version.getVersion() + "\n");
-				for (SourceCodeChange change : version.getSourceCodeChanges()) {
-					System.out.println(change.getChangeType() + ": " + change.getChangedEntity().getUniqueName());
-				}
-			}
 		}
 	}
 
