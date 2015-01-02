@@ -7,13 +7,16 @@ import java.util.Map;
 
 import org.eclipse.jgit.revwalk.RevCommit;
 
+import pl.edu.mimuw.changeanalyzer.exceptions.DataSetBuilderException;
 import pl.edu.mimuw.changeanalyzer.extraction.CommitInfo;
 import pl.edu.mimuw.changeanalyzer.extraction.CommitInfoExtractor;
 import weka.core.Attribute;
 import weka.core.FastVector;
 import weka.core.Instance;
 import weka.core.Instances;
+import ch.uzh.ifi.seal.changedistiller.model.classifiers.ChangeType;
 import ch.uzh.ifi.seal.changedistiller.model.entities.MethodHistory;
+import ch.uzh.ifi.seal.changedistiller.model.entities.StructureEntityVersion;
 
 
 /**
@@ -37,10 +40,14 @@ public abstract class DataSetBuilder {
 		BASIC_ATTRS.addElement(METHOD_NAME);
 		BASIC_ATTRS.addElement(COMMIT_ID);
 		BASIC_ATTRS.addElement(BUG_PRONENESS);
+		for (ChangeType changeType: ChangeType.values()) {
+			BASIC_ATTRS.addElement(new Attribute(changeType.name()));
+		}
 	}
 	
 	protected Map<String, CommitInfo> commits;
 	protected CommitInfoExtractor extractor;
+	protected ChangeCounter changeCounter;
 	
 	/**
 	 * Default constructor.
@@ -48,6 +55,7 @@ public abstract class DataSetBuilder {
 	public DataSetBuilder() {
 		this.commits = new HashMap<String, CommitInfo>();
 		this.extractor = new CommitInfoExtractor();
+		this.changeCounter = new ChangeCounter();
 	}
 	
 	/**
@@ -57,6 +65,15 @@ public abstract class DataSetBuilder {
 	 */
 	public FastVector getAttributes() {
 		return BASIC_ATTRS;
+	}
+	
+	/**
+	 * Get the number of attributes of instances produced by this builder.
+	 * 
+	 * @return Number of attributes
+	 */
+	public int getNumAttrs() {
+		return BASIC_ATTRS.size();
 	}
 	
 	/**
@@ -83,8 +100,9 @@ public abstract class DataSetBuilder {
 	 * 
 	 * @param history Method history to build instaces from
 	 * @return An iterable of model instances
+	 * @throws DataSetBuilderException If a commit referenced in the method history is not found
 	 */
-	public abstract Iterable<Instance> buildInstances(MethodHistory history);
+	public abstract Iterable<Instance> buildInstances(MethodHistory history) throws DataSetBuilderException;
 	
 	/**
 	 * Build model instances from given method histories. Prior to calling this
@@ -93,8 +111,9 @@ public abstract class DataSetBuilder {
 	 * 
 	 * @param histories Method histories to build instaces from
 	 * @return An iterable of model instances
+	 * @throws DataSetBuilderException If a commit referenced in the method history is not found
 	 */
-	public Iterable<Instance> buildInstances(Iterable<MethodHistory> histories) {
+	public Iterable<Instance> buildInstances(Iterable<MethodHistory> histories) throws DataSetBuilderException {
 		List<Instance> instances = new LinkedList<Instance>();
 		for (MethodHistory history: histories) {
 			for (Instance instance: this.buildInstances(history)) {
@@ -111,16 +130,61 @@ public abstract class DataSetBuilder {
 	 * method histories. Prior to calling this method, builder should be supplied with 
 	 * all commits referenced by this methods' histories.
 	 * 
-	 * @param name Name for the data set
-	 * @param histories Method histories to build instaces from
+	 * @param name		Name for the data set
+	 * @param histories	Method histories to build instaces from
 	 * @return Data set containing instaces built from the given method histories
+	 * @throws DataSetBuilderException If a commit referenced in the method history is not found
 	 */
-	public Instances buildDataSet(String name, Iterable<MethodHistory> histories) {
+	public Instances buildDataSet(String name, Iterable<MethodHistory> histories) throws DataSetBuilderException {
 		Instances dataSet = new Instances(name, this.getAttributes(), 0);
 		for (Instance instance: this.buildInstances(histories)) {
 			dataSet.add(instance);
 		}
 		return dataSet;
+	}
+	
+	/**
+	 * Get an array of attribute values for an instance.
+	 * 
+	 * @param version		Method version object to extract name & commit ID from
+	 * @param bugProneness	Bug proneness of the instance
+	 * @param changeCounts	Array with counts of changes of different types
+	 * @return Array with the given attribute values
+	 */
+	protected double[] getAttrValues(StructureEntityVersion version, double bugProneness, int[] changeCounts) {
+		double[] values = new double[this.getNumAttrs()];
+		values[0] = METHOD_NAME.addStringValue(version.getUniqueName());
+		values[1] = COMMIT_ID.addStringValue(version.getVersion());
+		values[2] = bugProneness;
+		
+		for (int i = 0; i < changeCounts.length; ++i) {
+			values[i+3] = changeCounts[i];
+		}
+		
+		return values;
+	}
+	
+	/**
+	 * Create a single model instance. 
+	 * 
+	 * @param version		Method version object to extract name & commit ID from
+	 * @param bugProneness	Bug proneness of the instance
+	 * @param changeCounts	Array with counts of changes of different types
+	 * @return Instance with the given attribute values
+	 */
+	protected Instance createInstance(StructureEntityVersion version, double bugProneness, int[] changeCounts) {
+		double[] attrValues = this.getAttrValues(version, bugProneness, changeCounts);
+		return new Instance(1.0, attrValues);
+	}
+	
+	/**
+	 * Get extracted information about commit containing a given method version.
+	 * 
+	 * @param version Method version to find commit info for
+	 * @return Information about commit containing the given method version
+	 */
+	protected CommitInfo getCommitInfo(StructureEntityVersion version) {
+		return this.commits.get(version.getVersion());
 	}
 
 }
