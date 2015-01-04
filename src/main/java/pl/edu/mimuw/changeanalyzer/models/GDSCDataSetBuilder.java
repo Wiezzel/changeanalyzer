@@ -6,22 +6,19 @@ import weka.core.Instance;
 import ch.uzh.ifi.seal.changedistiller.model.entities.StructureEntityVersion;
 
 /**
- * Basic data set builder. Each built instance represents one commit.
- * Last commit in a chunk is assumed to be 50% bug-prone and this values
- * decreases geometrically with 50% ratio in preceding commits.  
+ * This data set builder class assumes geometric decrease (GD) of bug-proneness
+ * (see {@link GDDataSetBuilder}) and uses single commit (SC) as model (each 
+ * produced instance represents one commit). 
  * 
  * @author Adam Wierzbicki
  */
-public class BasicDataSetBuilder extends GDDataSetBuilder {
+public class GDSCDataSetBuilder extends GDDataSetBuilder {
 	
-	public static final double LAST_COMMIT_PRONENESS = 0.5;
-	public static final double DECREASE_RATIO = 0.5;
-
 	/**
-	 * Create a basic data set builder.
+	 * Create a GDSC data set builder.
 	 */
-	public BasicDataSetBuilder() {
-		super(LAST_COMMIT_PRONENESS, DECREASE_RATIO, true);
+	public GDSCDataSetBuilder(double initialLevel, double ratio, boolean bugfixesIncluded) {
+		super(initialLevel, ratio, bugfixesIncluded);
 	}
 	
 
