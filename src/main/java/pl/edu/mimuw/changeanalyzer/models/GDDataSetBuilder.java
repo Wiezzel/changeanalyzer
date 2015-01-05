@@ -26,7 +26,7 @@ public abstract class GDDataSetBuilder extends DataSetBuilder {
 	private List<Instance> resultBuffer;
 	
 	/**
-	 * Create a new GD data set builder.
+	 * Construct a new GD data set builder.
 	 * 
 	 * @param initialLevel		Bug-proneness of the last commit in a chunk
 	 * @param ratio				Bug-proneness decrease ratio
