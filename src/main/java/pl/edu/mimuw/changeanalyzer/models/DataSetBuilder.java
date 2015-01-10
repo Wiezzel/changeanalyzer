@@ -73,7 +73,7 @@ public abstract class DataSetBuilder {
 	 * @return Number of attributes
 	 */
 	public int getNumAttrs() {
-		return BASIC_ATTRS.size();
+		return this.getAttributes().size();
 	}
 	
 	/**

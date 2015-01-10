@@ -92,6 +92,8 @@ public class RepoHistoryExtractor {
 		} catch (GitAPIException e) {
 			throw new ChangeAnalyzerException("Failed to execute LOG command", e);
 		}
+		
+		//TODO: Add result persistence
 	}
 	
 	public static void main(String[] args) throws IOException, ChangeAnalyzerException {

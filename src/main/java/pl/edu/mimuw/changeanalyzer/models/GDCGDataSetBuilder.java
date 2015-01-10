@@ -1,7 +1,11 @@
 package pl.edu.mimuw.changeanalyzer.models;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+import weka.core.Attribute;
+import weka.core.FastVector;
 import weka.core.Instance;
 import ch.uzh.ifi.seal.changedistiller.model.entities.StructureEntityVersion;
 
@@ -18,6 +22,15 @@ import ch.uzh.ifi.seal.changedistiller.model.entities.StructureEntityVersion;
  * @author Adam Wierzbicki
  */
 public class GDCGDataSetBuilder extends GDDataSetBuilder {
+	
+	private static final FastVector ATTRIBUTES = (FastVector) BASIC_ATTRS.copy();
+	
+	static {
+		ATTRIBUTES.addElement(new Attribute("numCommits"));
+		ATTRIBUTES.addElement(new Attribute("numAuthors"));
+	}
+	
+	private Set<String> authors;
 
 	/**
 	 * Construct a new GDCG data set builder.
@@ -28,6 +41,7 @@ public class GDCGDataSetBuilder extends GDDataSetBuilder {
 	 */
 	public GDCGDataSetBuilder(double initialLevel, double ratio, boolean bugfixesIncluded) {
 		super(initialLevel, ratio, bugfixesIncluded);
+		this.authors = new HashSet<String>();
 	}
 	
 	/**
@@ -40,16 +54,32 @@ public class GDCGDataSetBuilder extends GDDataSetBuilder {
 	}
 	
 	@Override
+	public FastVector getAttributes() {
+		return ATTRIBUTES;
+	}
+	
+	@Override
 	protected void processChunk(List<StructureEntityVersion> versions, boolean isFixed) {
 		this.changeCounter.reset();
 		int i = versions.size() - 2 + (this.bugfixesIncluded() ? 0 : 1);
+		int numCommits = 0;
+		this.authors.clear();
 		
 		for (StructureEntityVersion version: versions) {
 			double bugProneness = isFixed ? (i < 0 ? 0.0 : this.getBugProneness(i)) : Instance.missingValue();
 			int[] changeCounts = this.changeCounter.countChanges(version);
-			Instance instance = this.createInstance(version, bugProneness, changeCounts);
+			double[] attrValues = this.getAttrValues(version, bugProneness, changeCounts);
+			attrValues[this.getNumAttrs() - 2] = numCommits;
+			
+			String author = this.commits.get(version.getVersion()).getAuthor();
+			this.authors.add(author);
+			attrValues[this.getNumAttrs() - 1] = this.authors.size();
+			
+			Instance instance = new Instance(1.0, attrValues);
 			this.addToResult(instance);
+			
 			--i;
+			++numCommits;
 		}
 	}
 
