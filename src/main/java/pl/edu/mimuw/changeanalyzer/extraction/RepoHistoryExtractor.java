@@ -19,8 +19,7 @@ import org.eclipse.jgit.treewalk.filter.PathSuffixFilter;
 import org.eclipse.jgit.treewalk.filter.TreeFilter;
 
 import pl.edu.mimuw.changeanalyzer.exceptions.ChangeAnalyzerException;
-import pl.edu.mimuw.changeanalyzer.io.CSVRepoHistoryWriter;
-import pl.edu.mimuw.changeanalyzer.io.RepoHistoryWriter;
+import pl.edu.mimuw.changeanalyzer.util.LazyList;
 import ch.uzh.ifi.seal.changedistiller.model.entities.ClassHistory;
 
 
@@ -84,35 +83,14 @@ public class RepoHistoryExtractor {
 	 * @throws IOException
 	 * @throws ChangeAnalyzerException
 	 */
-	public Iterable<RevCommit> extractRelevantCommits() throws IOException, ChangeAnalyzerException {
+	public Iterable<RevCommit> extractCommits() throws IOException, ChangeAnalyzerException {
 		ObjectId head = Utils.getHead(this.repository);
 		LogCommand logCommand = this.git.log().add(head);
 		try {
-			return logCommand.call();
+			return new LazyList<RevCommit>(logCommand.call());
 		} catch (GitAPIException e) {
 			throw new ChangeAnalyzerException("Failed to execute LOG command", e);
 		}
-		
-		//TODO: Add result persistence
-	}
-	
-	public static void main(String[] args) throws IOException, ChangeAnalyzerException {
-		RepoHistoryExtractor extractor = new RepoHistoryExtractor("C:\\jgit");
-		RepoHistoryWriter writer = new CSVRepoHistoryWriter("changes.csv", "commits.csv");
-		
-		long startTime = System.currentTimeMillis();
-		
-		Map<String, ClassHistory> map =  extractor.extractClassHistories();
-		ClassHistoryWrapper wrapper = new ClassHistoryWrapper(map.values());
-		Iterable<RevCommit> commits = extractor.extractRelevantCommits();
-		
-		writer.writeChanges(wrapper);
-		writer.writeCommits(commits);
-		writer.close();
-
-		long endTime = System.currentTimeMillis();
-		double execTime = ((double) (endTime - startTime)) / 1000;
-		System.out.println("Execution time: " + execTime + " s");
 	}
 
 }
