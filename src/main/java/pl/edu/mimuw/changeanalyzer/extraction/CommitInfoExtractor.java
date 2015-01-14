@@ -1,10 +1,14 @@
 package pl.edu.mimuw.changeanalyzer.extraction;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.eclipse.jgit.lib.PersonIdent;
 import org.eclipse.jgit.revwalk.RevCommit;
+
+import ch.uzh.ifi.seal.changedistiller.model.entities.StructureEntityVersion;
 
 
 /**
@@ -12,17 +16,24 @@ import org.eclipse.jgit.revwalk.RevCommit;
  */
 public class CommitInfoExtractor {
 	
-	private Pattern bugfixPattern = Pattern.compile("bug|fix|issue", Pattern.CASE_INSENSITIVE);
+	private Pattern bugfixPattern;
+	private Map<String, CommitInfo> commits;
 	
 	/**
-	 * Extract relevant information from a given commit. This method checks,
-	 * whether the commit is a bugfix, by performing a simple regex match.
+	 * Construct a new CommitInfoExtractor.
+	 */
+	public CommitInfoExtractor() {
+		this.bugfixPattern = Pattern.compile("bug|fix|issue", Pattern.CASE_INSENSITIVE);
+		this.commits = new HashMap<String, CommitInfo>();
+	}
+	
+	/**
+	 * Extract & store relevant information about a given commit. This method checks,
+	 * whether the commit is a bugfix by performing a simple regex match.
 	 * 
 	 * @param commit Commit to extract information from
-	 * @return CommitInfo object containing ID, time and author of the given commit
-	 * and information if it is a bugfix
 	 */
-	public CommitInfo extractCommitInfo(RevCommit commit) {
+	public void extractCommitInfo(RevCommit commit) {
 		String id = commit.getName();
 		int time = commit.getCommitTime();
 		PersonIdent authorIdent = commit.getAuthorIdent();
@@ -30,9 +41,37 @@ public class CommitInfoExtractor {
 		String author = authorIdent.getName();
 		boolean fix = this.isBugfix(message);
 		
-		return new CommitInfo(id, author, time, fix); 
+		this.commits.put(id, new CommitInfo(id, author, time, fix, 0, 0)); 
 	}
 	
+	/**
+	 * Add the number of changes in a given structure entity version, to the total
+	 * sum of changes in the commit associated with this version.
+	 * 
+	 * @param version Structure entity version to get number of changes from
+	 */
+	public void updateNumChanges(StructureEntityVersion version) {
+		String id = version.getVersion();
+		int numChanges = version.getSourceCodeChanges().size();
+		this.commits.get(id).addChangedEntity(numChanges);
+	}
+	
+	/**
+	 * Get a CommitInfo object for a given commid ID.
+	 * 
+	 * @param commitId Commit ID to get commit info for
+	 * @return Commit info for the given ID
+	 */
+	public CommitInfo getCommitInfo(String commitId) {
+		return this.commits.get(commitId);
+	}
+	
+	/**
+	 * Check if a given commit message indicates that commit is a bug-fix.
+	 * 
+	 * @param message Message to check
+	 * @return True iff commit is a bug-fix
+	 */
 	private boolean isBugfix(String message) {
 		Matcher matcher = this.bugfixPattern.matcher(message);
 		return matcher.find();

@@ -1,9 +1,7 @@
 package pl.edu.mimuw.changeanalyzer.models;
 
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import org.eclipse.jgit.revwalk.RevCommit;
 
@@ -45,7 +43,6 @@ public abstract class DataSetBuilder {
 		}
 	}
 	
-	protected Map<String, CommitInfo> commits;
 	protected CommitInfoExtractor extractor;
 	protected ChangeCounter changeCounter;
 	
@@ -53,7 +50,6 @@ public abstract class DataSetBuilder {
 	 * Default constructor.
 	 */
 	public DataSetBuilder() {
-		this.commits = new HashMap<String, CommitInfo>();
 		this.extractor = new CommitInfoExtractor();
 		this.changeCounter = new ChangeCounter();
 	}
@@ -85,10 +81,8 @@ public abstract class DataSetBuilder {
 	 * @return This object
 	 */
 	public DataSetBuilder readCommits(Iterable<RevCommit> commits) {
-		this.commits.clear();
 		for (RevCommit commit: commits) {
-			CommitInfo commitInfo = this.extractor.extractCommitInfo(commit);
-			this.commits.put(commitInfo.getId(), commitInfo);
+			this.extractor.extractCommitInfo(commit);
 		}
 		return this;
 	}
@@ -114,6 +108,12 @@ public abstract class DataSetBuilder {
 	 * @throws DataSetBuilderException If a commit referenced in the method history is not found
 	 */
 	public Iterable<Instance> buildInstances(Iterable<MethodHistory> histories) throws DataSetBuilderException {
+		for (MethodHistory history: histories) {
+			for (StructureEntityVersion version: history.getVersions()) {
+				this.extractor.updateNumChanges(version);
+			}
+		}
+		
 		List<Instance> instances = new LinkedList<Instance>();
 		for (MethodHistory history: histories) {
 			for (Instance instance: this.buildInstances(history)) {
@@ -184,7 +184,7 @@ public abstract class DataSetBuilder {
 	 * @return Information about commit containing the given method version
 	 */
 	protected CommitInfo getCommitInfo(StructureEntityVersion version) {
-		return this.commits.get(version.getVersion());
+		return this.extractor.getCommitInfo(version.getVersion());
 	}
 
 }

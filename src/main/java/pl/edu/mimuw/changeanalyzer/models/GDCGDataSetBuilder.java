@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import pl.edu.mimuw.changeanalyzer.extraction.CommitInfo;
 import weka.core.Attribute;
 import weka.core.FastVector;
 import weka.core.Instance;
@@ -28,6 +29,8 @@ public class GDCGDataSetBuilder extends GDDataSetBuilder {
 	static {
 		ATTRIBUTES.addElement(new Attribute("numCommits"));
 		ATTRIBUTES.addElement(new Attribute("numAuthors"));
+		ATTRIBUTES.addElement(new Attribute("totalNumChanges"));
+		ATTRIBUTES.addElement(new Attribute("totalNumEntities"));
 	}
 	
 	private Set<String> authors;
@@ -63,17 +66,23 @@ public class GDCGDataSetBuilder extends GDDataSetBuilder {
 		this.changeCounter.reset();
 		int i = versions.size() - 2 + (this.bugfixesIncluded() ? 0 : 1);
 		int numCommits = 0;
+		int totalNumChanges = 0;
+		int totalNumEntities = 0;
 		this.authors.clear();
 		
 		for (StructureEntityVersion version: versions) {
 			double bugProneness = isFixed ? (i < 0 ? 0.0 : this.getBugProneness(i)) : Instance.missingValue();
 			int[] changeCounts = this.changeCounter.countChanges(version);
 			double[] attrValues = this.getAttrValues(version, bugProneness, changeCounts);
-			attrValues[this.getNumAttrs() - 2] = numCommits;
+			attrValues[this.getNumAttrs() - 4] = numCommits;
 			
-			String author = this.commits.get(version.getVersion()).getAuthor();
-			this.authors.add(author);
-			attrValues[this.getNumAttrs() - 1] = this.authors.size();
+			CommitInfo commitInfo = this.extractor.getCommitInfo(version.getVersion());
+			totalNumChanges += commitInfo.getNumChanges();
+			totalNumEntities += commitInfo.getNumEntities();
+			this.authors.add(commitInfo.getAuthor());
+			attrValues[this.getNumAttrs() - 3] = this.authors.size();
+			attrValues[this.getNumAttrs() - 2] = totalNumChanges;
+			attrValues[this.getNumAttrs() - 1] = totalNumEntities;
 			
 			Instance instance = new Instance(1.0, attrValues);
 			this.addToResult(instance);
