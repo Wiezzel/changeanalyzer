@@ -6,6 +6,8 @@ import java.util.List;
 import org.eclipse.jgit.revwalk.RevCommit;
 
 import pl.edu.mimuw.changeanalyzer.exceptions.DataSetBuilderException;
+import pl.edu.mimuw.changeanalyzer.extraction.AuthorInfo;
+import pl.edu.mimuw.changeanalyzer.extraction.AuthorInfoExtractor;
 import pl.edu.mimuw.changeanalyzer.extraction.CommitInfo;
 import pl.edu.mimuw.changeanalyzer.extraction.CommitInfoExtractor;
 import weka.core.Attribute;
@@ -43,14 +45,16 @@ public abstract class DataSetBuilder {
 		}
 	}
 	
-	protected CommitInfoExtractor extractor;
+	protected CommitInfoExtractor commitExtractor;
+	protected AuthorInfoExtractor authorExtractor;
 	protected ChangeCounter changeCounter;
 	
 	/**
 	 * Default constructor.
 	 */
 	public DataSetBuilder() {
-		this.extractor = new CommitInfoExtractor();
+		this.commitExtractor = new CommitInfoExtractor();
+		this.authorExtractor = new AuthorInfoExtractor();
 		this.changeCounter = new ChangeCounter();
 	}
 	
@@ -82,7 +86,7 @@ public abstract class DataSetBuilder {
 	 */
 	public DataSetBuilder readCommits(Iterable<RevCommit> commits) {
 		for (RevCommit commit: commits) {
-			this.extractor.extractCommitInfo(commit);
+			this.commitExtractor.extractCommitInfo(commit);
 		}
 		return this;
 	}
@@ -110,8 +114,12 @@ public abstract class DataSetBuilder {
 	public Iterable<Instance> buildInstances(Iterable<MethodHistory> histories) throws DataSetBuilderException {
 		for (MethodHistory history: histories) {
 			for (StructureEntityVersion version: history.getVersions()) {
-				this.extractor.updateNumChanges(version);
+				this.commitExtractor.updateNumChanges(version);
 			}
+		}
+		
+		for (CommitInfo commitInfo: this.commitExtractor.getAllCommitInfos()) {
+			this.authorExtractor.updateAuthorInfo(commitInfo);
 		}
 		
 		List<Instance> instances = new LinkedList<Instance>();
@@ -180,11 +188,21 @@ public abstract class DataSetBuilder {
 	/**
 	 * Get extracted information about commit containing a given method version.
 	 * 
-	 * @param version Method version to find commit info for
-	 * @return Information about commit containing the given method version
+	 * @param version Method version to find commit information about
+	 * @return Information about the commit containing the given method version
 	 */
 	protected CommitInfo getCommitInfo(StructureEntityVersion version) {
-		return this.extractor.getCommitInfo(version.getVersion());
+		return this.commitExtractor.getCommitInfo(version.getVersion());
+	}
+	
+	/**
+	 * Get extracted information about a given author.
+	 * 
+	 * @param name Name of the author to get information about
+	 * @return Informationa about the author with the given name
+	 */
+	protected AuthorInfo getAuthorInfo(String name) {
+		return this.authorExtractor.getAuthorInfo(name);
 	}
 
 }

@@ -12,7 +12,10 @@ import ch.uzh.ifi.seal.changedistiller.model.entities.StructureEntityVersion;
 
 
 /**
- * Extractor of relevant commit information from JGit's RevCommit objects 
+ * Extractor of relevant commit information from JGit's RevCommit objects.
+ * It stores {@link CommitInfo} objects.
+ * 
+ * @author Adam Wierzbicki
  */
 public class CommitInfoExtractor {
 	
@@ -42,7 +45,7 @@ public class CommitInfoExtractor {
 		boolean fix = this.isBugfix(message);
 		
 		this.commits.put(id, new CommitInfo(id, author, time, fix, 0, 0)); 
-	}
+	}	
 	
 	/**
 	 * Add the number of changes in a given structure entity version, to the total
@@ -57,13 +60,23 @@ public class CommitInfoExtractor {
 	}
 	
 	/**
-	 * Get a CommitInfo object for a given commid ID.
+	 * Get a CommitInfo object for a given commit ID.
 	 * 
 	 * @param commitId Commit ID to get commit info for
 	 * @return Commit info for the given ID
+	 * (null if the given ID has no mapping)
 	 */
 	public CommitInfo getCommitInfo(String commitId) {
 		return this.commits.get(commitId);
+	}
+
+	/**
+	 * Get information extracted from all commits.
+	 * 
+	 * @return An iterable of CommitInfo objects
+	 */
+	public Iterable<CommitInfo> getAllCommitInfos() {
+		return this.commits.values();
 	}
 	
 	/**
