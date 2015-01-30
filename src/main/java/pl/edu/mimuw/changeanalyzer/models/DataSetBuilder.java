@@ -10,6 +10,7 @@ import pl.edu.mimuw.changeanalyzer.extraction.AuthorInfo;
 import pl.edu.mimuw.changeanalyzer.extraction.AuthorInfoExtractor;
 import pl.edu.mimuw.changeanalyzer.extraction.CommitInfo;
 import pl.edu.mimuw.changeanalyzer.extraction.CommitInfoExtractor;
+import pl.edu.mimuw.changeanalyzer.models.Attributes.AttributeValues;
 import weka.core.Attribute;
 import weka.core.FastVector;
 import weka.core.Instance;
@@ -30,24 +31,13 @@ import ch.uzh.ifi.seal.changedistiller.model.entities.StructureEntityVersion;
  */
 public abstract class DataSetBuilder {
 	
-	protected static final FastVector BASIC_ATTRS = new FastVector();
-	
-	protected static final Attribute METHOD_NAME = new Attribute("methodName", (FastVector) null);
-	protected static final Attribute COMMIT_ID = new Attribute("commitId", (FastVector) null);
-	protected static final Attribute BUG_PRONENESS = new Attribute("bugProneness");
-	
-	static {
-		BASIC_ATTRS.addElement(METHOD_NAME);
-		BASIC_ATTRS.addElement(COMMIT_ID);
-		BASIC_ATTRS.addElement(BUG_PRONENESS);
-		for (ChangeType changeType: ChangeType.values()) {
-			BASIC_ATTRS.addElement(new Attribute(changeType.name()));
-		}
-	}
+	public static final Attribute METHOD_NAME = new Attribute("methodName", (FastVector) null);
+	public static final Attribute COMMIT_ID = new Attribute("commitId", (FastVector) null);
 	
 	protected CommitInfoExtractor commitExtractor;
 	protected AuthorInfoExtractor authorExtractor;
 	protected ChangeCounter changeCounter;
+	protected Attributes attributes;
 	
 	/**
 	 * Default constructor.
@@ -56,6 +46,13 @@ public abstract class DataSetBuilder {
 		this.commitExtractor = new CommitInfoExtractor();
 		this.authorExtractor = new AuthorInfoExtractor();
 		this.changeCounter = new ChangeCounter();
+		this.attributes = new Attributes();
+		
+		this.attributes.addAttribute(METHOD_NAME);
+		this.attributes.addAttribute(COMMIT_ID);
+		for (ChangeType changeType: ChangeType.values()) {
+			this.attributes.addAttribute(new Attribute(changeType.name()));
+		}
 	}
 	
 	/**
@@ -63,8 +60,8 @@ public abstract class DataSetBuilder {
 	 * 
 	 * @return A vector with attributes
 	 */
-	public FastVector getAttributes() {
-		return BASIC_ATTRS;
+	public FastVector getAttributesVector() {
+		return this.attributes.getAttributesVector();
 	}
 	
 	/**
@@ -73,7 +70,7 @@ public abstract class DataSetBuilder {
 	 * @return Number of attributes
 	 */
 	public int getNumAttrs() {
-		return this.getAttributes().size();
+		return this.attributes.getNumAttributes();
 	}
 	
 	/**
@@ -144,7 +141,7 @@ public abstract class DataSetBuilder {
 	 * @throws DataSetBuilderException If a commit referenced in the method history is not found
 	 */
 	public Instances buildDataSet(String name, Iterable<MethodHistory> histories) throws DataSetBuilderException {
-		Instances dataSet = new Instances(name, this.getAttributes(), 0);
+		Instances dataSet = new Instances(name, this.getAttributesVector(), 0);
 		for (Instance instance: this.buildInstances(histories)) {
 			dataSet.add(instance);
 		}
@@ -152,37 +149,36 @@ public abstract class DataSetBuilder {
 	}
 	
 	/**
-	 * Get an array of attribute values for an instance.
+	 * Get attribute values of a new instance.
 	 * 
 	 * @param version		Method version object to extract name & commit ID from
-	 * @param bugProneness	Bug proneness of the instance
-	 * @param changeCounts	Array with counts of changes of different types
-	 * @return Array with the given attribute values
+	 * @return Attribute values of a new instace
 	 */
-	protected double[] getAttrValues(StructureEntityVersion version, double bugProneness, int[] changeCounts) {
-		double[] values = new double[this.getNumAttrs()];
-		values[0] = METHOD_NAME.addStringValue(version.getUniqueName());
-		values[1] = COMMIT_ID.addStringValue(version.getVersion());
-		values[2] = bugProneness;
+	protected AttributeValues getAttrValues(StructureEntityVersion version) {
+		AttributeValues values = this.attributes.getNewValues();
 		
-		for (int i = 0; i < changeCounts.length; ++i) {
-			values[i+3] = changeCounts[i];
+		double methodName = METHOD_NAME.addStringValue(version.getUniqueName());
+		double commitId = COMMIT_ID.addStringValue(version.getVersion());
+		values.setAttributeValue(METHOD_NAME, methodName);
+		values.setAttributeValue(COMMIT_ID, commitId);
+		
+		for (ChangeType changeType: ChangeType.values()) {
+			int changeCount = this.changeCounter.getCount(changeType);
+			values.setAttributeValue(changeType.name(), changeCount);
 		}
 		
 		return values;
 	}
 	
 	/**
-	 * Create a single model instance. 
+	 * Create a new model model instance. 
 	 * 
 	 * @param version		Method version object to extract name & commit ID from
-	 * @param bugProneness	Bug proneness of the instance
-	 * @param changeCounts	Array with counts of changes of different types
-	 * @return Instance with the given attribute values
+	 * @return A new model instace
 	 */
-	protected Instance createInstance(StructureEntityVersion version, double bugProneness, int[] changeCounts) {
-		double[] attrValues = this.getAttrValues(version, bugProneness, changeCounts);
-		return new Instance(1.0, attrValues);
+	protected Instance createInstance(StructureEntityVersion version) {
+		AttributeValues values = this.getAttrValues(version);
+		return new Instance(1.0, values.getValues());
 	}
 	
 	/**
