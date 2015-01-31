@@ -160,8 +160,9 @@ public class ClassHistoryExtractor {
 		try {
 			loader.copyTo(stream);
 		} catch (IOException e) {
-			stream.close();
 			throw e;
+		} finally {
+			stream.close();
 		}
 	}
 
