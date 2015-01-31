@@ -1,6 +1,11 @@
 package pl.edu.mimuw.changeanalyzer.exceptions;
 
 
+/**
+ * Base class for all ChangeAnalyzer exceptions.
+ * 
+ * @author Adam Wierzbicki
+ */
 public class ChangeAnalyzerException extends Exception {
 
 	private static final long serialVersionUID = 4447485625147295555L;

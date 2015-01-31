@@ -1,6 +1,14 @@
 package pl.edu.mimuw.changeanalyzer.exceptions;
 
+import pl.edu.mimuw.changeanalyzer.models.DataSetBuilder;
 
+
+/**
+ * Exception thrown by {@link DataSetBuilder} class. It indicates an error
+ * during creation of a data set.
+ * 
+ * @author Adam Wierzbicki
+ */
 public class DataSetBuilderException extends ChangeAnalyzerException {
 
 	private static final long serialVersionUID = -6665034329577589499L;

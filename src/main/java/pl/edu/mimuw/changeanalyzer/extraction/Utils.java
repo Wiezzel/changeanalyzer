@@ -9,9 +9,14 @@ import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Repository;
 
-import pl.edu.mimuw.changeanalyzer.exceptions.ChangeAnalyzerException;
+import pl.edu.mimuw.changeanalyzer.exceptions.ExtractionException;
 
 
+/**
+ * Utility class for repository information extraction.
+ * 
+ * @author Adam Wierzbicki
+ */
 public class Utils {
 	
 	/**
@@ -20,13 +25,13 @@ public class Utils {
 	 * @param repository Repository to find HEAD
 	 * @return ID of the HEAD of the given repository
 	 * @throws IOException
-	 * @throws ChangeAnalyzerException
+	 * @throws ExtractionException
 	 */
-	public static ObjectId getHead(Repository repository) throws IOException, ChangeAnalyzerException {
+	public static ObjectId getHead(Repository repository) throws IOException, ExtractionException {
 		try {
 			return repository.resolve(Constants.HEAD);
 		} catch (RevisionSyntaxException | AmbiguousObjectException | IncorrectObjectTypeException e) {
-			throw new ChangeAnalyzerException("Failed to obtain repository head", e);
+			throw new ExtractionException("Failed to obtain repository head", e);
 		}
 	}
 

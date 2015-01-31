@@ -1,6 +1,12 @@
 package pl.edu.mimuw.changeanalyzer.exceptions;
 
 
+/**
+ * Exception thrown when an error occurs during extraction of information
+ * from a repository.
+ * 
+ * @author Adam Wierzbicki
+ */
 public class ExtractionException extends ChangeAnalyzerException {
 
 	private static final long serialVersionUID = -8356457598059513346L;

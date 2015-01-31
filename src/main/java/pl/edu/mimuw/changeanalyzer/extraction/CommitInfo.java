@@ -3,6 +3,8 @@ package pl.edu.mimuw.changeanalyzer.extraction;
 
 /**
  * Class containing relevant information about a commit
+ * 
+ * @author Adam Wierzbicki
  */
 public class CommitInfo {
 

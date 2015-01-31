@@ -12,7 +12,7 @@ import ch.uzh.ifi.seal.changedistiller.model.entities.MethodHistory;
  * histories of all their methods. It allows also for iterating over histories
  * of methods of inner classes.
  * 
- * @author Wiezzel
+ * @author Adam Wierzbicki
  */
 public class ClassHistoryWrapper implements Iterable<MethodHistory> {
 	
@@ -32,18 +32,33 @@ public class ClassHistoryWrapper implements Iterable<MethodHistory> {
 		return new MethodHistoryIterator();
 	}
 	
+	/**
+	 * Iterator class that walks through all classes' histories by a DFS
+	 * (on the composition graph) and yields method histories. Next element
+	 * to be returned by this iterator is always pre-loaded.
+	 * 
+	 * @author Adam Wierzbicki
+	 */
 	private class MethodHistoryIterator implements Iterator<MethodHistory> {
 		
 		private Stack<ClassHistory> classHistories;
 		private Iterator<MethodHistory> methodHistories;
 		private MethodHistory next;
 		
+		/**
+		 * Construct a new MethodHistoryIterator.
+		 */
 		public MethodHistoryIterator() {
 			this.classHistories = new Stack<ClassHistory>();
 			this.classHistories.addAll(ClassHistoryWrapper.this.classHistories);
 			this.loadNext();
 		}
 		
+		/**
+		 * Load next method history. If the inner method history iterator (iterating
+		 * over methods of one class) doesn't have any more elements, pop a new class
+		 * history from the stack.
+		 */
 		private synchronized void loadNext() {
 			if (this.methodHistories != null && this.methodHistories.hasNext()) {
 				this.next = this.methodHistories.next();

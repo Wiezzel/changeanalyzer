@@ -26,22 +26,46 @@ import ch.uzh.ifi.seal.changedistiller.distilling.FileDistiller;
 import ch.uzh.ifi.seal.changedistiller.model.entities.ClassHistory;
 
 
+/**
+ * Class responsible for extraction of class histories. It contains reference
+ * to a local Git repository. Each class is identified by a relative (to the repository
+ * root directory) path to the .java file which cotains it.
+ * 
+ * @author Adam Wierzbicki
+ */
 public class ClassHistoryExtractor {
 	
 	private Repository repository;
 	private Git git;
 	
+	/**
+	 * Construct a new ClassHistoryExtractor.
+	 * 
+	 * @param repository Repository to extract class histories from
+	 */
 	public ClassHistoryExtractor(Repository repository) {
 		this.repository = repository;
 		this.git = new Git(repository);
 	}
 
+	/**
+	 * Construct a new ClassHistoryExtractor.
+	 * 
+	 * @param repoDir Directory with a repository to extract class histories from
+	 * @throws IOException When the given directory doesn't contain a proper repository
+	 */
 	public ClassHistoryExtractor(File repoDir) throws IOException {
 		FileRepositoryBuilder repoBuilder = new FileRepositoryBuilder();
 		this.repository = repoBuilder.setWorkTree(repoDir).build();
 		this.git = new Git(this.repository);
 	}
 	
+	/**
+	 * Construct a new ClassHistoryExtractor.
+	 * 
+	 * @param repoPath Path to a repository to extract class histories from
+	 * @throws IOException When the given path doesn't point to a proper repository
+	 */
 	public ClassHistoryExtractor(String repoPath) throws IOException {
 		this(new File(repoPath));		
 	}
@@ -98,8 +122,12 @@ public class ClassHistoryExtractor {
 			distiller.extractClassifiedSourceCodeChanges(tmpOldFile, tmpNewFile, newCommit.name());
 		}
 		
-		tmpOldFile.delete();
-		tmpNewFile.delete();
+		if (!tmpOldFile.delete()) {
+			throw new IOException("Failed to delete file " + tmpOldFile.getAbsolutePath());
+		}
+		if (!tmpNewFile.delete()) {
+			throw new IOException("Failed to delete file " + tmpNewFile.getAbsolutePath());
+		}
 		return distiller.getClassHistory();
 	}
 	

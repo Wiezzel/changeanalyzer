@@ -5,11 +5,22 @@ import java.util.List;
 import ch.uzh.ifi.seal.changedistiller.model.entities.StructureEntityVersion;
 
 
+/**
+ * This measure assigns bug-proneness score of 1.0 to the last commit
+ * of a chunk and geometrically decreasing scores to the previous ones.
+ * 
+ * @author Adam Wierzbicki
+ */
 public class GeometricMeasure implements BugPronenessMeasure {
 	
 	private final double ratio;
 	private double[] bugProneness;
 	
+	/**
+	 * Construct a new GeometricMeasure.
+	 * 
+	 * @param ratio Ratio of the geometric decrease
+	 */
 	public GeometricMeasure(double ratio) {
 		this.ratio = ratio;
 	}
