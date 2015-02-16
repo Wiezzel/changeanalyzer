@@ -57,6 +57,7 @@ public class GroupDataSetBuilder extends ChunkDataSetBuilder {
 		this.authors.clear();
 		
 		for (StructureEntityVersion version: versions) {
+			this.changeCounter.countChanges(version);
 			AttributeValues values = this.getAttrValues(version, index, isFixed);
 			
 			CommitInfo commitInfo = this.getCommitInfo(version);
