@@ -6,20 +6,23 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Stack;
 
-import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.LogCommand;
-import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.diff.DiffConfig;
+import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.revwalk.FollowFilter;
+import org.eclipse.jgit.revwalk.RenameCallback;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevTree;
+import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.eclipse.jgit.treewalk.filter.PathFilter;
 
 import pl.edu.mimuw.changeanalyzer.exceptions.ChangeAnalyzerException;
+import pl.edu.mimuw.changeanalyzer.exceptions.ExtractionException;
 import ch.uzh.ifi.seal.changedistiller.ChangeDistiller;
 import ch.uzh.ifi.seal.changedistiller.ChangeDistiller.Language;
 import ch.uzh.ifi.seal.changedistiller.distilling.FileDistiller;
@@ -35,8 +38,11 @@ import ch.uzh.ifi.seal.changedistiller.model.entities.ClassHistory;
  */
 public class ClassHistoryExtractor {
 	
+	public static final String DIFF_SECTION = "diff";
+	public static final String RENAME_KEY = "renames";
+	public static final String RENAME_VALUE = "copy";
+	
 	private Repository repository;
-	private Git git;
 	
 	/**
 	 * Construct a new ClassHistoryExtractor.
@@ -45,7 +51,8 @@ public class ClassHistoryExtractor {
 	 */
 	public ClassHistoryExtractor(Repository repository) {
 		this.repository = repository;
-		this.git = new Git(repository);
+		this.repository.getConfig().setString(DIFF_SECTION, null, RENAME_KEY, RENAME_VALUE);
+		// Copy detection is not working in JGit 3.6.2, but maybe will be fixed
 	}
 
 	/**
@@ -55,9 +62,7 @@ public class ClassHistoryExtractor {
 	 * @throws IOException When the given directory doesn't contain a proper repository
 	 */
 	public ClassHistoryExtractor(File repoDir) throws IOException {
-		FileRepositoryBuilder repoBuilder = new FileRepositoryBuilder();
-		this.repository = repoBuilder.setWorkTree(repoDir).build();
-		this.git = new Git(this.repository);
+		this(new FileRepositoryBuilder().setWorkTree(repoDir).build());
 	}
 	
 	/**
@@ -78,15 +83,24 @@ public class ClassHistoryExtractor {
 	 * @throws IOException
 	 * @throws ChangeAnalyzerException
 	 */
-	public Iterable<RevCommit> getFileRevisions(String filePath) throws IOException, ChangeAnalyzerException {
+	public RevWalk getFileRevisions(String filePath, RenameCallback callback)
+			throws IOException, ChangeAnalyzerException {
+		
 		ObjectId head = Utils.getHead(this.repository);
-		LogCommand logCommand = this.git.log().add(head).addPath(filePath);
-		try {
-			return logCommand.call();
-		} catch (GitAPIException e) {
-			throw new ChangeAnalyzerException("Failed to execute LOG command", e);
+		if (head == null) {
+			throw new ExtractionException("Invalid repository: " + this.repository.getWorkTree().getAbsolutePath());
 		}
-		//TODO: Handle renamed/moved files
+		
+		DiffConfig diffConfig = this.repository.getConfig().get(DiffConfig.KEY);
+		FollowFilter filter = FollowFilter.create(filePath, diffConfig);
+		filter.setRenameCallback(callback);
+		
+		RevWalk revWalk = new RevWalk(this.repository);
+		RevCommit headCommit = revWalk.parseCommit(head);
+		revWalk.markStart(headCommit);
+		revWalk.setTreeFilter(filter);
+		
+		return revWalk;
 	}
 	
 	/**
@@ -101,9 +115,19 @@ public class ClassHistoryExtractor {
 	 */
 	public ClassHistory extractClassHistory(String filePath) throws IOException, ChangeAnalyzerException {
 		Stack<RevCommit> commits = new Stack<RevCommit>();
-		for (RevCommit commit: this.getFileRevisions(filePath)) {
+		Stack<String> filePaths = new Stack<String>();
+		filePaths.add(filePath);
+		
+		RevWalk revWalk = this.getFileRevisions(filePath, new RenameCallback() {
+			@Override
+			public void renamed(DiffEntry diffentry) {
+				filePaths.add(diffentry.getOldPath());
+			}
+		});
+		for (RevCommit commit: revWalk) {
 			commits.add(commit);
 		}
+		revWalk.dispose();
 		if (commits.size() < 2) {
 			return null;
 		}
@@ -114,11 +138,35 @@ public class ClassHistoryExtractor {
 		
 		RevCommit oldCommit = null;
 		RevCommit newCommit = commits.pop();
+		String oldPath = null;
+		String newPath = filePaths.pop();
+				
 		while (!commits.empty()) {
 			oldCommit = newCommit;
 			newCommit = commits.pop();
-			this.storeFileRevision(oldCommit, filePath, tmpOldFile);
-			this.storeFileRevision(newCommit, filePath, tmpNewFile);
+			oldPath = newPath;
+			
+			ObjectId oldFileId = this.getFileId(oldCommit, oldPath);
+			ObjectId newFileId = this.getFileId(newCommit, newPath);
+			if (newFileId == null) {
+				if (filePaths.empty()) {
+					System.err.println("Discarding " + newCommit);
+					newCommit = oldCommit;
+					continue;
+				}
+				newPath = filePaths.peek();
+				newFileId = this.getFileId(newCommit, newPath);
+				if (newFileId == null) {
+					System.err.println("Discarding " + newCommit);
+					newCommit = oldCommit;
+					newPath = oldPath;
+					continue;
+				}
+				filePaths.pop();
+			}
+			
+			this.storeFileRevision(oldFileId, tmpOldFile);
+			this.storeFileRevision(newFileId, tmpNewFile);
 			distiller.extractClassifiedSourceCodeChanges(tmpOldFile, tmpNewFile, newCommit.name());
 		}
 		
@@ -132,17 +180,15 @@ public class ClassHistoryExtractor {
 	}
 	
 	/**
-	 * Copy the content of a git versioned file into another file. Retrieved content
-	 * is identical to the state of the versioned file after a given commit.
 	 * 
-	 * @param commit 			Commit from which file version is retrieved
-	 * @param versionedFilePath Path to the versioned file (relative to the main directory of the repository)
-	 * @param destFile 			Destination file
+	 * @param commit	Commit from which file version is retrieved
+	 * @param path		Path to the versioned file (relative to the main directory of the repository)
+	 * @return
 	 * @throws IOException
 	 */
-	private void storeFileRevision(RevCommit commit, String versionedFilePath, File destFile) throws IOException {
+	private ObjectId getFileId(RevCommit commit, String path) throws IOException {
 		RevTree revTree = commit.getTree();
-		PathFilter filter = PathFilter.create(versionedFilePath);
+		PathFilter filter = PathFilter.create(path);
 		
 		TreeWalk treeWalk = new TreeWalk(this.repository);
 		treeWalk.addTree(revTree);
@@ -150,13 +196,22 @@ public class ClassHistoryExtractor {
 		treeWalk.setFilter(filter);
 	
 		if (!treeWalk.next()) {
-			return;
+			return null;
 		}
-		ObjectId fileId = treeWalk.getObjectId(0);
+		return treeWalk.getObjectId(0);
+	}
+	
+	/**
+	 * Copy the content of a git versioned file into another file.
+	 *
+	 * @param fileId	ID of a versioned file
+	 * @param destFile 	Destination file
+	 * @throws IOException
+	 */
+	private void storeFileRevision(ObjectId fileId, File destFile) throws IOException {
 		ObjectLoader loader = this.repository.open(fileId, Constants.OBJ_BLOB);
-		
-
 		OutputStream stream = new FileOutputStream(destFile);
+		
 		try {
 			loader.copyTo(stream);
 		} catch (IOException e) {
