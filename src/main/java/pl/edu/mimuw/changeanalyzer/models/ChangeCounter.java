@@ -82,5 +82,23 @@ public class ChangeCounter {
 	public int getCount(ChangeType changeType) {
 		return this.counters.getOrDefault(changeType, 0);
 	}
-
+	
+	/**
+	 * Get total sum of all counters.
+	 * 
+	 * @return Total sum of all counters
+	 */
+	public int getTotalSum() {
+		return this.counters.values().stream().mapToInt(Integer::valueOf).sum();
+	}
+	
+	/**
+	 * Add a given counter to this counter.
+	 * 
+	 * @param counter Counter to be added
+	 */
+	public void add(ChangeCounter counter) {
+		counter.counters.forEach((k, v) -> this.counters.merge(k, v, Integer::sum));
+	}
+	
 }

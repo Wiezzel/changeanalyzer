@@ -28,6 +28,8 @@ public class GroupDataSetBuilder extends ChunkDataSetBuilder {
 	public static final Attribute AVG_ENTITIES = new Attribute("avgEntities");
 	public static final Attribute AVG_AUTHOR_COMMITS = new Attribute("avgAuthorCommits");
 	public static final Attribute AVG_AUTHOR_CHANGES = new Attribute("avgAuthorChanges");
+	public static final Attribute AVG_CHANGE_RATIO = new Attribute("avgChangeRatio");
+	public static final Attribute CHANGE_GINI = new Attribute("changeGini");
 	
 	private Set<String> authors;
 
@@ -44,20 +46,27 @@ public class GroupDataSetBuilder extends ChunkDataSetBuilder {
 		this.attributes.addAttribute(AVG_ENTITIES);
 		this.attributes.addAttribute(AVG_AUTHOR_COMMITS);
 		this.attributes.addAttribute(AVG_AUTHOR_CHANGES);
+		this.attributes.addAttribute(AVG_CHANGE_RATIO);
+		this.attributes.addAttribute(CHANGE_GINI);
 	}
 	
 	@Override
 	protected void processChunk(List<StructureEntityVersion> versions, boolean isFixed) {
+		ChangeCounter versionChangeCounter = new ChangeCounter();
 		this.changeCounter.reset();
 		int index = 0;
 		int totalChanges = 0;
 		int totalEntities = 0;
 		int totalAuthorCommits = 0;
 		int totalAuthorChanges = 0;
+		double changeRatio = 0.0;
+		int[] numChanges = new int[versions.size()];
+		int numChangesDiffsSum = 0;
 		this.authors.clear();
 		
 		for (StructureEntityVersion version: versions) {
-			this.changeCounter.countChanges(version);
+			versionChangeCounter.reset().countChanges(version);
+			this.changeCounter.add(versionChangeCounter);
 			AttributeValues values = this.getAttrValues(version, index, isFixed);
 			
 			CommitInfo commitInfo = this.getCommitInfo(version);
@@ -66,6 +75,14 @@ public class GroupDataSetBuilder extends ChunkDataSetBuilder {
 			totalEntities += commitInfo.getNumEntities();
 			totalAuthorCommits += authorInfo.getNumCommits();
 			totalAuthorChanges += authorInfo.getNumChanges();
+			int numVersionChanges = versionChangeCounter.getTotalSum();
+			changeRatio += (double) numVersionChanges / commitInfo.getNumChanges();
+			
+			numChanges[index] = numVersionChanges;
+			for (int i = 0; i < index; ++i) {
+				numChangesDiffsSum += Math.abs(numChanges[i] - numChanges[index]);
+			}
+			
 			this.authors.add(commitInfo.getAuthor());
 			int numCommits = ++index;
 			int numAuthors = this.authors.size();
@@ -76,6 +93,9 @@ public class GroupDataSetBuilder extends ChunkDataSetBuilder {
 			values.setAttributeValue(AVG_ENTITIES, (double) totalEntities / numCommits);
 			values.setAttributeValue(AVG_AUTHOR_COMMITS, (double) totalAuthorCommits / numCommits);
 			values.setAttributeValue(AVG_AUTHOR_CHANGES, (double) totalAuthorChanges / numCommits);
+			values.setAttributeValue(AVG_CHANGE_RATIO, changeRatio / numCommits);
+			values.setAttributeValue(CHANGE_GINI,
+					(double) numChangesDiffsSum / (numCommits * this.changeCounter.getTotalSum()));
 			
 			Instance instance = new Instance(1.0, values.getValues());
 			this.addToResult(instance);
