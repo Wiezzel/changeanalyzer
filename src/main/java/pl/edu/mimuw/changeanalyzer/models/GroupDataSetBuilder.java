@@ -4,6 +4,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.eclipse.jgit.revwalk.RevCommit;
+
 import pl.edu.mimuw.changeanalyzer.extraction.AuthorInfo;
 import pl.edu.mimuw.changeanalyzer.extraction.CommitInfo;
 import pl.edu.mimuw.changeanalyzer.models.Attributes.AttributeValues;
@@ -30,8 +32,10 @@ public class GroupDataSetBuilder extends ChunkDataSetBuilder {
 	public static final Attribute AVG_AUTHOR_CHANGES = new Attribute("avgAuthorChanges");
 	public static final Attribute AVG_CHANGE_RATIO = new Attribute("avgChangeRatio");
 	public static final Attribute CHANGE_GINI = new Attribute("changeGini");
+	public static final Attribute TIME_SINCE_LAST_FIX = new Attribute("timeSinceLastFix");
 	
 	private Set<String> authors;
+	private int firstCommitTime;
 
 	/**
 	 * Construct a new group data set builder.
@@ -39,6 +43,7 @@ public class GroupDataSetBuilder extends ChunkDataSetBuilder {
 	public GroupDataSetBuilder() {
 		super(false);
 		this.authors = new HashSet<String>();
+		this.firstCommitTime = 0;
 		
 		this.attributes.addAttribute(NUM_COMMITS);
 		this.attributes.addAttribute(NUM_AUTHORS);
@@ -48,12 +53,24 @@ public class GroupDataSetBuilder extends ChunkDataSetBuilder {
 		this.attributes.addAttribute(AVG_AUTHOR_CHANGES);
 		this.attributes.addAttribute(AVG_CHANGE_RATIO);
 		this.attributes.addAttribute(CHANGE_GINI);
+		this.attributes.addAttribute(TIME_SINCE_LAST_FIX);
 	}
 	
 	@Override
-	protected void processChunk(List<StructureEntityVersion> versions, boolean isFixed) {
+	public GroupDataSetBuilder readCommits(Iterable<RevCommit> commits) {
+		super.readCommits(commits);
+		for (CommitInfo commitInfo: this.commitExtractor.getAllCommitInfos()) {
+			this.firstCommitTime = Math.min(this.firstCommitTime, commitInfo.getTime());
+		}
+		return this;
+	}
+	
+	@Override
+	protected void processChunk(List<StructureEntityVersion> versions, CommitInfo lastFix, boolean isFixed) {
 		ChangeCounter versionChangeCounter = new ChangeCounter();
 		this.changeCounter.reset();
+		this.authors.clear();
+		
 		int index = 0;
 		int totalChanges = 0;
 		int totalEntities = 0;
@@ -62,7 +79,8 @@ public class GroupDataSetBuilder extends ChunkDataSetBuilder {
 		double changeRatio = 0.0;
 		int[] numChanges = new int[versions.size()];
 		int numChangesDiffsSum = 0;
-		this.authors.clear();
+		
+		int lastFixTime = lastFix != null ? lastFix.getTime() : this.firstCommitTime;
 		
 		for (StructureEntityVersion version: versions) {
 			versionChangeCounter.reset().countChanges(version);
@@ -96,6 +114,7 @@ public class GroupDataSetBuilder extends ChunkDataSetBuilder {
 			values.setAttributeValue(AVG_CHANGE_RATIO, changeRatio / numCommits);
 			values.setAttributeValue(CHANGE_GINI,
 					(double) numChangesDiffsSum / (numCommits * this.changeCounter.getTotalSum()));
+			values.setAttributeValue(TIME_SINCE_LAST_FIX, commitInfo.getTime() - lastFixTime);
 			
 			Instance instance = new Instance(1.0, values.getValues());
 			this.addToResult(instance);

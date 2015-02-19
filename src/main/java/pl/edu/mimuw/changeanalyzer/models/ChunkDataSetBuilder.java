@@ -42,6 +42,7 @@ public abstract class ChunkDataSetBuilder extends DataSetBuilder {
 	public Iterable<Instance> buildInstances(MethodHistory history) throws DataSetBuilderException {
 		List<StructureEntityVersion> workingBuffer = new LinkedList<StructureEntityVersion>();
 		
+		CommitInfo lastFix = null;
 		for (StructureEntityVersion version: history.getVersions()) {
 			CommitInfo commitInfo = this.getCommitInfo(version);
 			if (commitInfo == null) {
@@ -52,14 +53,15 @@ public abstract class ChunkDataSetBuilder extends DataSetBuilder {
 			}
 			if (commitInfo.isFix()) {
 				this.resetMeasures(workingBuffer);
-				this.processChunk(workingBuffer, true);
+				this.processChunk(workingBuffer, lastFix, true);
 				workingBuffer = new LinkedList<StructureEntityVersion>();
+				lastFix = commitInfo;
 			}
 		}
 		
 		if (!workingBuffer.isEmpty()) {
 			this.resetMeasures(workingBuffer);
-			this.processChunk(workingBuffer, false);
+			this.processChunk(workingBuffer, lastFix, false);
 		}
 		
 		return this.flushResultBuffer();
@@ -138,8 +140,10 @@ public abstract class ChunkDataSetBuilder extends DataSetBuilder {
 	 * Process a chunk of method versions.
 	 * 
 	 * @param versions	Method versions to be processed
+	 * @param lastFix	Information about last fix before this chunk
+	 * 					(null if the given chunk is the fist one in a method history)
 	 * @param isFixed	Is this chunk ended with a bug-fixing commit
 	 */
-	protected abstract void processChunk(List<StructureEntityVersion> versions, boolean isFixed);
+	protected abstract void processChunk(List<StructureEntityVersion> versions, CommitInfo lastFix, boolean isFixed);
 	
 }
