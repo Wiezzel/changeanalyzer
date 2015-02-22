@@ -21,12 +21,12 @@ import ch.uzh.ifi.seal.changedistiller.model.entities.ClassHistory;
 
 public class ExtractAndSave {
 	
-	private static void extractAndSave(String repoPath, String resultPath)
+	private static void extractAndSave(File repository, String resultPath)
 			throws IOException, ChangeAnalyzerException {
 		
 		long startTime = System.currentTimeMillis();
 		
-		RepoHistoryExtractor extractor = new RepoHistoryExtractor(repoPath);
+		RepoHistoryExtractor extractor = new RepoHistoryExtractor(repository);
 		Map<String, ClassHistory> map =  extractor.extractClassHistories();
 		ClassHistoryWrapper wrapper = new ClassHistoryWrapper(map.values());
 		Iterable<RevCommit> commits = extractor.extractCommits();
@@ -42,8 +42,8 @@ public class ExtractAndSave {
 		
 		long endTime = System.currentTimeMillis();
 		double execTime = ((double) (endTime - startTime)) / 1000;
-		System.out.printf("Extracted data from %s into %s. Execution time: %.2f s\n", 
-				repoPath, resultPath, execTime);
+		System.out.printf("Extracted data from %s into %s. Execution time: %.2f s%n", 
+				repository.getAbsolutePath(), resultPath, execTime);
 	}
 	
 	private static void saveDataSet(Instances dataSet, String path) throws IOException {
@@ -53,18 +53,19 @@ public class ExtractAndSave {
 		saver.writeBatch();
 	}
 	
-	private static void safeExtractAndSave(String repoPath, String resultPath) {
+	private static void safeExtractAndSave(File repository, String resultPath) {
 		try {
-			extractAndSave(repoPath, resultPath);
+			extractAndSave(repository, resultPath);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException, ChangeAnalyzerException {
 		for (int i = 0; i < args.length; ++i) {
-			String fileName = args[i].replaceAll("\\\\|/", "_") + "_gdcg_0.7.arff";
-			safeExtractAndSave(args[i], fileName);
+			File repository = new File(args[i]);
+			String resultPath = repository.getName() + ".arff";
+			safeExtractAndSave(repository, resultPath);
 		}
 	}
 
