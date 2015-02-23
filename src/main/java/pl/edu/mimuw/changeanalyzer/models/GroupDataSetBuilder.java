@@ -85,7 +85,6 @@ public class GroupDataSetBuilder extends ChunkDataSetBuilder {
 		for (StructureEntityVersion version: versions) {
 			versionChangeCounter.reset().countChanges(version);
 			this.changeCounter.add(versionChangeCounter);
-			AttributeValues values = this.getAttrValues(version, index, isFixed);
 			
 			CommitInfo commitInfo = this.getCommitInfo(version);
 			AuthorInfo authorInfo = this.getAuthorInfo(commitInfo.getAuthor());
@@ -102,22 +101,28 @@ public class GroupDataSetBuilder extends ChunkDataSetBuilder {
 			}
 			
 			this.authors.add(commitInfo.getAuthor());
-			int numCommits = ++index;
+			int numCommits = index + 1;
 			int numAuthors = this.authors.size();
 			
-			values.setAttributeValue(NUM_COMMITS, numCommits);
-			values.setAttributeValue(NUM_AUTHORS, numAuthors);
-			values.setAttributeValue(AVG_CHANGES, (double) totalChanges / numCommits);
-			values.setAttributeValue(AVG_ENTITIES, (double) totalEntities / numCommits);
-			values.setAttributeValue(AVG_AUTHOR_COMMITS, (double) totalAuthorCommits / numCommits);
-			values.setAttributeValue(AVG_AUTHOR_CHANGES, (double) totalAuthorChanges / numCommits);
-			values.setAttributeValue(AVG_CHANGE_RATIO, changeRatio / numCommits);
-			values.setAttributeValue(CHANGE_GINI,
-					(double) numChangesDiffsSum / (numCommits * this.changeCounter.getTotalSum()));
-			values.setAttributeValue(TIME_SINCE_LAST_FIX, commitInfo.getTime() - lastFixTime);
+			if (isFixed || index == versions.size() - 1) {
+				AttributeValues values = this.getAttrValues(version, index, isFixed);
+				
+				values.setAttributeValue(NUM_COMMITS, numCommits);
+				values.setAttributeValue(NUM_AUTHORS, numAuthors);
+				values.setAttributeValue(AVG_CHANGES, (double) totalChanges / numCommits);
+				values.setAttributeValue(AVG_ENTITIES, (double) totalEntities / numCommits);
+				values.setAttributeValue(AVG_AUTHOR_COMMITS, (double) totalAuthorCommits / numCommits);
+				values.setAttributeValue(AVG_AUTHOR_CHANGES, (double) totalAuthorChanges / numCommits);
+				values.setAttributeValue(AVG_CHANGE_RATIO, changeRatio / numCommits);
+				values.setAttributeValue(CHANGE_GINI,
+						(double) numChangesDiffsSum / (numCommits * this.changeCounter.getTotalSum()));
+				values.setAttributeValue(TIME_SINCE_LAST_FIX, commitInfo.getTime() - lastFixTime);
+				
+				Instance instance = new Instance(1.0, values.getValues());
+				this.addToResult(instance);
+			}
 			
-			Instance instance = new Instance(1.0, values.getValues());
-			this.addToResult(instance);
+			++index;
 		}
 	}
 

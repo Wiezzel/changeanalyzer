@@ -21,11 +21,20 @@ public class LazyList<T> implements Iterable<T> {
 	/**
 	 * Construct a new LazyList.
 	 * 
+	 * @param source Iterator providing objects to be stored in the list
+	 */
+	public LazyList(Iterator<T> source) {
+		this.source = source;
+		this.list = new ArrayList<T>();
+	}
+	
+	/**
+	 * Construct a new LazyList.
+	 * 
 	 * @param source Iterable providing objects to be stored in the list
 	 */
 	public LazyList(Iterable<T> source) {
-		this.source = source.iterator();
-		this.list = new ArrayList<T>();
+		this(source.iterator());
 	}
 
 	@Override

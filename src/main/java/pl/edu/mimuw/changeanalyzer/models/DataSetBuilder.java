@@ -126,8 +126,6 @@ public abstract class DataSetBuilder {
 			}
 		}
 		return instances;
-		
-		// TODO: Lazy evaluation
 	}
 	
 	/**
