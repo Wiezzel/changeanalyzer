@@ -1,9 +1,8 @@
 package pl.edu.mimuw.changeanalyzer.extraction;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.Stack;
 
 import org.eclipse.jgit.diff.DiffConfig;
@@ -21,11 +20,9 @@ import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.eclipse.jgit.treewalk.filter.PathFilter;
 
+import pl.edu.mimuw.changeanalyzer.distiller.InMemoryChangeDistiller;
 import pl.edu.mimuw.changeanalyzer.exceptions.ChangeAnalyzerException;
 import pl.edu.mimuw.changeanalyzer.exceptions.ExtractionException;
-import ch.uzh.ifi.seal.changedistiller.ChangeDistiller;
-import ch.uzh.ifi.seal.changedistiller.ChangeDistiller.Language;
-import ch.uzh.ifi.seal.changedistiller.distilling.FileDistiller;
 import ch.uzh.ifi.seal.changedistiller.model.entities.ClassHistory;
 
 
@@ -132,9 +129,7 @@ public class ClassHistoryExtractor {
 			return null;
 		}
 		
-		FileDistiller distiller = ChangeDistiller.createFileDistiller(Language.JAVA);
-		File tmpOldFile = File.createTempFile(filePath.replace('/', '.'), ".old");
-		File tmpNewFile = File.createTempFile(filePath.replace('/', '.'), ".new");
+		InMemoryChangeDistiller distiller = new InMemoryChangeDistiller();
 		
 		RevCommit oldCommit = null;
 		RevCommit newCommit = commits.pop();
@@ -165,17 +160,13 @@ public class ClassHistoryExtractor {
 				filePaths.pop();
 			}
 			
-			this.storeFileRevision(oldFileId, tmpOldFile);
-			this.storeFileRevision(newFileId, tmpNewFile);
-			distiller.extractClassifiedSourceCodeChanges(tmpOldFile, tmpNewFile, newCommit.name());
+			String leftSource = this.getFileRevision(oldFileId);
+			String rightSource = this.getFileRevision(newFileId);
+			String fileName = new File(filePath).getName();
+			
+			distiller.extractClassifiedSourceCodeChanges(leftSource, fileName, rightSource, fileName, newCommit.name());
 		}
 		
-		if (!tmpOldFile.delete()) {
-			throw new IOException("Failed to delete file " + tmpOldFile.getAbsolutePath());
-		}
-		if (!tmpNewFile.delete()) {
-			throw new IOException("Failed to delete file " + tmpNewFile.getAbsolutePath());
-		}
 		return distiller.getClassHistory();
 	}
 	
@@ -202,15 +193,14 @@ public class ClassHistoryExtractor {
 	}
 	
 	/**
-	 * Copy the content of a git versioned file into another file.
-	 *
-	 * @param fileId	ID of a versioned file
-	 * @param destFile 	Destination file
+	 * 
+	 * @param fileId
+	 * @return
 	 * @throws IOException
 	 */
-	private void storeFileRevision(ObjectId fileId, File destFile) throws IOException {
+	private String getFileRevision(ObjectId fileId) throws IOException {
 		ObjectLoader loader = this.repository.open(fileId, Constants.OBJ_BLOB);
-		OutputStream stream = new FileOutputStream(destFile);
+		ByteArrayOutputStream stream = new ByteArrayOutputStream();
 		
 		try {
 			loader.copyTo(stream);
@@ -219,6 +209,7 @@ public class ClassHistoryExtractor {
 		} finally {
 			stream.close();
 		}
+		return new String(stream.toByteArray());
 	}
 
 }
