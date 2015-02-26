@@ -1,5 +1,6 @@
 package pl.edu.mimuw.changeanalyzer.models;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -10,9 +11,8 @@ import pl.edu.mimuw.changeanalyzer.extraction.AuthorInfo;
 import pl.edu.mimuw.changeanalyzer.extraction.AuthorInfoExtractor;
 import pl.edu.mimuw.changeanalyzer.extraction.CommitInfo;
 import pl.edu.mimuw.changeanalyzer.extraction.CommitInfoExtractor;
-import pl.edu.mimuw.changeanalyzer.models.Attributes.AttributeValues;
 import weka.core.Attribute;
-import weka.core.FastVector;
+import weka.core.DenseInstance;
 import weka.core.Instance;
 import weka.core.Instances;
 import ch.uzh.ifi.seal.changedistiller.model.classifiers.ChangeType;
@@ -31,8 +31,8 @@ import ch.uzh.ifi.seal.changedistiller.model.entities.StructureEntityVersion;
  */
 public abstract class DataSetBuilder {
 	
-	public static final Attribute METHOD_NAME = new Attribute("methodName", (FastVector) null);
-	public static final Attribute COMMIT_ID = new Attribute("commitId", (FastVector) null);
+	public static final Attribute METHOD_NAME = new Attribute("methodName", (List<String>) null);
+	public static final Attribute COMMIT_ID = new Attribute("commitId", (List<String>) null);
 	
 	protected CommitInfoExtractor commitExtractor;
 	protected AuthorInfoExtractor authorExtractor;
@@ -60,7 +60,7 @@ public abstract class DataSetBuilder {
 	 * 
 	 * @return A vector with attributes
 	 */
-	public FastVector getAttributesVector() {
+	public ArrayList<Attribute> getAttributesVector() {
 		return this.attributes.getAttributesVector();
 	}
 	
@@ -147,36 +147,26 @@ public abstract class DataSetBuilder {
 	}
 	
 	/**
-	 * Get attribute values of a new instance.
+	 * Get a new instance.
 	 * 
 	 * @param version		Method version object to extract name & commit ID from
-	 * @return Attribute values of a new instace
+	 * @return A new instace
 	 */
-	protected AttributeValues getAttrValues(StructureEntityVersion version) {
-		AttributeValues values = this.attributes.getNewValues();
+	protected Instance getInstance(StructureEntityVersion version) {
+		Instance instance = new DenseInstance(this.getNumAttrs());
 		
 		double methodName = METHOD_NAME.addStringValue(version.getUniqueName());
 		double commitId = COMMIT_ID.addStringValue(version.getVersion());
-		values.setAttributeValue(METHOD_NAME, methodName);
-		values.setAttributeValue(COMMIT_ID, commitId);
+		instance.setValue(METHOD_NAME, methodName);
+		instance.setValue(COMMIT_ID, commitId);
 		
 		for (ChangeType changeType: ChangeType.values()) {
 			int changeCount = this.changeCounter.getCount(changeType);
-			values.setAttributeValue(changeType.name(), changeCount);
+			int attributeIndex = this.attributes.getAttributeIndex(changeType.name());
+			instance.setValue(attributeIndex, changeCount);
 		}
 		
-		return values;
-	}
-	
-	/**
-	 * Create a new model model instance. 
-	 * 
-	 * @param version		Method version object to extract name & commit ID from
-	 * @return A new model instace
-	 */
-	protected Instance createInstance(StructureEntityVersion version) {
-		AttributeValues values = this.getAttrValues(version);
-		return new Instance(1.0, values.getValues());
+		return instance;
 	}
 	
 	/**

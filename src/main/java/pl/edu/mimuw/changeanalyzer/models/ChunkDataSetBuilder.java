@@ -5,7 +5,6 @@ import java.util.List;
 
 import pl.edu.mimuw.changeanalyzer.exceptions.DataSetBuilderException;
 import pl.edu.mimuw.changeanalyzer.extraction.CommitInfo;
-import pl.edu.mimuw.changeanalyzer.models.Attributes.AttributeValues;
 import pl.edu.mimuw.changeanalyzer.models.measures.BugPronenessMeasure;
 import weka.core.Attribute;
 import weka.core.Instance;
@@ -68,21 +67,27 @@ public abstract class ChunkDataSetBuilder extends DataSetBuilder {
 	}
 	
 	/**
-	 * Get attribute values of a new instance.
+	 * Get a new instance.
 	 * 
 	 * @param version		Method version object to extract name & commit ID from
 	 * @param index			Index of the given version in its chunk
 	 * @param chunkIsFixed	Flag indicating if the chunk containing the given version
 	 * 						is followed by a bugfix commit
-	 * @return Attribute values of a new instace
+	 * @return A new instace
 	 */
-	protected AttributeValues getAttrValues(StructureEntityVersion version, int index, boolean chunkIsFixed) {
-		AttributeValues values = this.getAttrValues(version);
+	protected Instance getInstance(StructureEntityVersion version, int index, boolean chunkIsFixed) {
+		Instance instance = this.getInstance(version);
 		for (BugPronenessMeasure measure: this.measures) {
-			double bugProneness = chunkIsFixed ? measure.getBugProneness(index) : Instance.missingValue();
-			values.setAttributeValue(measure.getName(), bugProneness);
+			int attributeIndex = this.attributes.getAttributeIndex(measure.getName());
+			if (chunkIsFixed) {
+				double bugProneness = measure.getBugProneness(index);
+				instance.setValue(attributeIndex, bugProneness);
+			}
+			else {
+				instance.setMissing(attributeIndex);
+			}
 		}
-		return values;
+		return instance;
 	}
 	
 	/**

@@ -8,7 +8,6 @@ import org.eclipse.jgit.revwalk.RevCommit;
 
 import pl.edu.mimuw.changeanalyzer.extraction.AuthorInfo;
 import pl.edu.mimuw.changeanalyzer.extraction.CommitInfo;
-import pl.edu.mimuw.changeanalyzer.models.Attributes.AttributeValues;
 import weka.core.Attribute;
 import weka.core.Instance;
 import ch.uzh.ifi.seal.changedistiller.model.entities.StructureEntityVersion;
@@ -105,20 +104,19 @@ public class GroupDataSetBuilder extends ChunkDataSetBuilder {
 			int numAuthors = this.authors.size();
 			
 			if (isFixed || index == versions.size() - 1) {
-				AttributeValues values = this.getAttrValues(version, index, isFixed);
+				Instance instance = this.getInstance(version, index, isFixed);
 				
-				values.setAttributeValue(NUM_COMMITS, numCommits);
-				values.setAttributeValue(NUM_AUTHORS, numAuthors);
-				values.setAttributeValue(AVG_CHANGES, (double) totalChanges / numCommits);
-				values.setAttributeValue(AVG_ENTITIES, (double) totalEntities / numCommits);
-				values.setAttributeValue(AVG_AUTHOR_COMMITS, (double) totalAuthorCommits / numCommits);
-				values.setAttributeValue(AVG_AUTHOR_CHANGES, (double) totalAuthorChanges / numCommits);
-				values.setAttributeValue(AVG_CHANGE_RATIO, changeRatio / numCommits);
-				values.setAttributeValue(CHANGE_GINI,
+				instance.setValue(NUM_COMMITS, numCommits);
+				instance.setValue(NUM_AUTHORS, numAuthors);
+				instance.setValue(AVG_CHANGES, (double) totalChanges / numCommits);
+				instance.setValue(AVG_ENTITIES, (double) totalEntities / numCommits);
+				instance.setValue(AVG_AUTHOR_COMMITS, (double) totalAuthorCommits / numCommits);
+				instance.setValue(AVG_AUTHOR_CHANGES, (double) totalAuthorChanges / numCommits);
+				instance.setValue(AVG_CHANGE_RATIO, changeRatio / numCommits);
+				instance.setValue(CHANGE_GINI,
 						(double) numChangesDiffsSum / (numCommits * this.changeCounter.getTotalSum()));
-				values.setAttributeValue(TIME_SINCE_LAST_FIX, commitInfo.getTime() - lastFixTime);
+				instance.setValue(TIME_SINCE_LAST_FIX, commitInfo.getTime() - lastFixTime);
 				
-				Instance instance = new Instance(1.0, values.getValues());
 				this.addToResult(instance);
 			}
 			
