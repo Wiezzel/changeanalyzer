@@ -93,7 +93,8 @@ additionalFeatureCols = c(
   "avgAuthorCommits",
   "avgAuthorChanges",
   "avgChangeRatio",
-  "changeGini"
+  "changeGini",
+  "timeSinceLastFix"
 )
 
 ## Bug-proneness columns
@@ -117,7 +118,7 @@ readTrainData = function(filePath) {
   
   trainData = cbind(rawChanges, additionalFeatures, bugProneness,
                     paramsChange = paramsChanges, headerChange = headerChanges)
-  trainData[complete.cases(trainData),]
+  trainData[complete.cases(bugProneness),]
 }
 
 ## Functions for performing cross-validation of various models
@@ -126,11 +127,12 @@ performCV = function(trainData, classColName, ...) {
   x = trainData[, !names(trainData) %in% bugPronenessCols]
   y = trainData[, classColName]
   trainData = cbind(x, class=y)
+  complete = complete.cases(trainData)
   
   forestCV = suppressWarnings(cvFit(randomForest, class~., trainData, ...))$cv
   treeCV = suppressWarnings(cvFit(rpart, class~., trainData, ...))$cv
   svmCV = suppressWarnings(cvFit(svm, class~., trainData, ...))$cv
-  nnetCV = suppressWarnings(cvFit(nnet, x=x, y=y, args=c(size=10, linout=T, trace=F), ...))$cv
+  nnetCV = suppressWarnings(cvFit(nnet, x=x[complete,], y=y[complete], args=c(size=10, linout=T, trace=F), ...))$cv
   
   c(forest=forestCV, tree=treeCV, svm=svmCV, nnet=nnetCV)
 }
@@ -165,6 +167,6 @@ mavenCV = performAllCV(maven)
 mockitoCV = performAllCV(mockito)
 springCV = performAllCV(spring)
 
-allResults = list(commonsLangCV, guavaCV, hibernateCV, jettyCV, jgitCV, junitCV,
-                  log4jCV, mavenCV, mockitoCV, springCV)
+allResults = list(commonsLang=commonsLangCV, guava=guavaCV, hibernate=hibernateCV, jetty=jettyCV, jgit=jgitCV,
+                  junit=junitCV, log4j=log4jCV, maven=mavenCV, mockito=mockitoCV, spring=springCV)
 avgResults = apply(simplify2array(allResults), c(1,2), mean)
