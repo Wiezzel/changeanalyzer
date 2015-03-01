@@ -11,6 +11,7 @@ import pl.edu.mimuw.changeanalyzer.extraction.AuthorInfo;
 import pl.edu.mimuw.changeanalyzer.extraction.AuthorInfoExtractor;
 import pl.edu.mimuw.changeanalyzer.extraction.CommitInfo;
 import pl.edu.mimuw.changeanalyzer.extraction.CommitInfoExtractor;
+import pl.edu.mimuw.changeanalyzer.models.attributes.Attributes;
 import weka.core.Attribute;
 import weka.core.DenseInstance;
 import weka.core.Instance;
@@ -32,7 +33,6 @@ import ch.uzh.ifi.seal.changedistiller.model.entities.StructureEntityVersion;
 public abstract class DataSetBuilder {
 	
 	public static final Attribute METHOD_NAME = new Attribute("methodName", (List<String>) null);
-	public static final Attribute COMMIT_ID = new Attribute("commitId", (List<String>) null);
 	
 	protected CommitInfoExtractor commitExtractor;
 	protected AuthorInfoExtractor authorExtractor;
@@ -49,7 +49,6 @@ public abstract class DataSetBuilder {
 		this.attributes = new Attributes();
 		
 		this.attributes.addAttribute(METHOD_NAME);
-		this.attributes.addAttribute(COMMIT_ID);
 		for (ChangeType changeType: ChangeType.values()) {
 			this.attributes.addAttribute(new Attribute(changeType.name()));
 		}
@@ -71,6 +70,15 @@ public abstract class DataSetBuilder {
 	 */
 	public int getNumAttrs() {
 		return this.attributes.getNumAttributes();
+	}
+	
+	/**
+	 * Get the attributes of instances produced by this builder.
+	 * 
+	 * @return Attributes of instances produced by this builder
+	 */
+	public Attributes getAttributes() {
+		return this.attributes.copyOf();
 	}
 	
 	/**
@@ -149,16 +157,14 @@ public abstract class DataSetBuilder {
 	/**
 	 * Get a new instance.
 	 * 
-	 * @param version		Method version object to extract name & commit ID from
+	 * @param version		Method version object to extract method name from
 	 * @return A new instace
 	 */
 	protected Instance getInstance(StructureEntityVersion version) {
 		Instance instance = new DenseInstance(this.getNumAttrs());
 		
 		double methodName = METHOD_NAME.addStringValue(version.getUniqueName());
-		double commitId = COMMIT_ID.addStringValue(version.getVersion());
 		instance.setValue(METHOD_NAME, methodName);
-		instance.setValue(COMMIT_ID, commitId);
 		
 		for (ChangeType changeType: ChangeType.values()) {
 			int changeCount = this.changeCounter.getCount(changeType);

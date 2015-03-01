@@ -1,8 +1,11 @@
-package pl.edu.mimuw.changeanalyzer.models;
+package pl.edu.mimuw.changeanalyzer.models.attributes;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.apache.commons.lang3.ArrayUtils;
 
 import weka.core.Attribute;
 
@@ -18,11 +21,21 @@ public class Attributes {
 	private Map<String, Integer> indices;
 	
 	/**
-	 * Create new Attributes.
+	 * Construct new Attributes.
 	 */
 	public Attributes() {
 		this.attributes = new ArrayList<Attribute>();
 		this.indices = new HashMap<String, Integer>();
+	}
+	
+	/**
+	 * Construct a copy of existing Attributes.
+	 * 
+	 * @param attributes Attributes to be copied.
+	 */
+	public Attributes(Attributes attributes) {
+		this.attributes = new ArrayList<Attribute>(attributes.attributes);
+		this.indices = new HashMap<String, Integer>(attributes.indices);
 	}
 	
 	/**
@@ -76,8 +89,43 @@ public class Attributes {
 	 * @param attribute Attribute to get index of
 	 * @return Index of the given attribute
 	 */
-	public int getAttribtueIndex(Attribute attribute) {
+	public int getAttributeIndex(Attribute attribute) {
 		return this.getAttributeIndex(attribute.name());
+	}
+	
+	/**
+	 * Get the numeric indices of attributes.
+	 * 
+	 * @param names Names of attributes to get indices of
+	 * @return Indices of attributes with the given names
+	 */
+	public int[] getAttributeIndices(String[] names) {
+		return ArrayUtils.toPrimitive(Arrays.stream(names)
+			.map(this::getAttributeIndex)
+			.toArray(Integer[]::new)
+		);
+	}
+	
+	/**
+	 * Get the numeric indices of attributes.
+	 * 
+	 * @param names Attributes to get indices of
+	 * @return Indices of the given attributes
+	 */
+	public int[] getAttributIndices(Attribute[] attributes) {
+		return ArrayUtils.toPrimitive(Arrays.stream(attributes)
+			.map(this::getAttributeIndex)
+			.toArray(Integer[]::new)
+		);
+	}
+	
+	/**
+	 * Get a shallow copy of this attributes.
+	 * 
+	 * @return A shallow copy of this attributes
+	 */
+	public Attributes copyOf() {
+		return new Attributes(this);
 	}
 
 }

@@ -86,7 +86,7 @@ public class ClassHistoryExtractor {
 	public RevWalk getFileRevisions(String filePath, RenameCallback callback)
 			throws IOException, ChangeAnalyzerException {
 		
-		ObjectId head = Utils.getHead(this.repository);
+		ObjectId head = ExtractionUtils.getHead(this.repository);
 		if (head == null) {
 			throw new ExtractionException("Invalid repository: " + this.repository.getWorkTree().getAbsolutePath());
 		}

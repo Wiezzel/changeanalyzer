@@ -80,7 +80,7 @@ public class RepoHistoryExtractor {
 	public Map<String, ClassHistory> extractClassHistories() throws IOException, ChangeAnalyzerException {
 		Map<String, ClassHistory> map = new HashMap<String, ClassHistory>();
 		
-		ObjectId headId = Utils.getHead(this.repository);
+		ObjectId headId = ExtractionUtils.getHead(this.repository);
 		RevWalk revWalk = new RevWalk(this.repository);
 		RevCommit headCommit = revWalk.parseCommit(headId);
 		RevTree revTree = headCommit.getTree();
@@ -108,7 +108,7 @@ public class RepoHistoryExtractor {
 	 * @throws ExtractionException
 	 */
 	public Iterable<RevCommit> extractCommits() throws IOException, ExtractionException {
-		ObjectId head = Utils.getHead(this.repository);
+		ObjectId head = ExtractionUtils.getHead(this.repository);
 		LogCommand logCommand = this.git.log().add(head);
 		try {
 			return new LazyList<RevCommit>(logCommand.call());

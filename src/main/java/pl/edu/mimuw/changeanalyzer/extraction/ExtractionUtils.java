@@ -17,7 +17,7 @@ import pl.edu.mimuw.changeanalyzer.exceptions.ExtractionException;
  * 
  * @author Adam Wierzbicki
  */
-public class Utils {
+public interface ExtractionUtils {
 	
 	/**
 	 * Get ID of the HEAD of a repository
