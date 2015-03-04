@@ -50,9 +50,18 @@ public class DataSetProvider {
 		try {
 			DataSource dataSource = new DataSource(dataPath);
 			this.dataSet = dataSource.getDataSet();
+			this.dataSet = this.processor.processDataSet(this.dataSet);
 		} catch (Exception e) {
 			throw new IOException(e);
 		}
+	}
+	
+	public void readDataFromFile(File dataFile) throws IOException {
+		this.readDataFromFile(dataFile.getAbsolutePath());
+	}
+	
+	public boolean isDataReady() {
+		return this.dataSet != null;
 	}
 	
 	private void extractData() throws IOException, ChangeAnalyzerException {
@@ -65,7 +74,7 @@ public class DataSetProvider {
 	}
 	
 	public Instances getTrainingInstances() {
-		if (this.dataSet == null) {
+		if (!this.isDataReady()) {
 			return null;
 		}
 		Instances trainingInstances = new Instances(this.dataSet);
@@ -75,7 +84,7 @@ public class DataSetProvider {
 	}
 	
 	public Instances getTestInstances() throws ProcessingException {
-		if (this.dataSet == null) {
+		if (!this.isDataReady()) {
 			return null;
 		}
 		RemoveWithValues filter = new RemoveWithValues();
@@ -83,8 +92,8 @@ public class DataSetProvider {
 		filter.setAttributeIndex(String.valueOf(classIndex));
 		filter.setMatchMissingValues(true);
 		try {
+			filter.setInputFormat(dataSet);
 			Instances testInstances = Filter.useFilter(this.dataSet, filter);
-			testInstances.deleteAttributeAt(classIndex);
 			return testInstances;
 		} catch (Exception e) {
 			throw new ProcessingException(e);

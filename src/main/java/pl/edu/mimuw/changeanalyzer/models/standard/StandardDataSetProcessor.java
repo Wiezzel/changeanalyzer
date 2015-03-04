@@ -1,5 +1,7 @@
 package pl.edu.mimuw.changeanalyzer.models.standard;
 
+import java.util.Arrays;
+
 import org.apache.commons.lang3.ArrayUtils;
 
 import pl.edu.mimuw.changeanalyzer.exceptions.ProcessingException;
@@ -92,6 +94,8 @@ public class StandardDataSetProcessor extends DataSetProcessor {
 
 	@Override
 	public Instances processDataSet(Instances dataSet) throws ProcessingException {
+		dataSet.setClassIndex(classIndex);
+		
 		AttributeProcessor paramProcessor = new SumAttributes(this.paramChangeIndices, PARAM_CHANGE, dataSet);
 		dataSet = paramProcessor.processAttributes(dataSet);
 
@@ -100,8 +104,7 @@ public class StandardDataSetProcessor extends DataSetProcessor {
 		
 		AttributeProcessor deleteProcessor = new DeleteAttributes(this.allDeleteIndices);
 		dataSet = deleteProcessor.processAttributes(dataSet);
-		
-		dataSet.setClassIndex(classIndex);
+
 		return dataSet;
 	}
 

@@ -27,7 +27,7 @@ public class DeleteAttributes extends AttributeProcessor {
 	public Instances processAttributes(Instances data) throws ProcessingException {
 		Instances result = new Instances(data);
 		for (int i = this.sourceAttributeIndices.length - 1; i >=0; --i) {
-			result.deleteAttributeAt(i);
+			result.deleteAttributeAt(this.sourceAttributeIndices[i]);
 		}
 		return result;
 	}
