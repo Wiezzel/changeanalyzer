@@ -1,4 +1,4 @@
-package pl.edu.mimuw.changeanalyzer.models;
+package pl.edu.mimuw.changeanalyzer.models.standard;
 
 import java.util.HashSet;
 import java.util.List;
@@ -8,6 +8,8 @@ import org.eclipse.jgit.revwalk.RevCommit;
 
 import pl.edu.mimuw.changeanalyzer.extraction.AuthorInfo;
 import pl.edu.mimuw.changeanalyzer.extraction.CommitInfo;
+import pl.edu.mimuw.changeanalyzer.models.ChangeCounter;
+import pl.edu.mimuw.changeanalyzer.models.ChunkDataSetBuilder;
 import weka.core.Attribute;
 import weka.core.Instance;
 import ch.uzh.ifi.seal.changedistiller.model.entities.StructureEntityVersion;
@@ -21,7 +23,7 @@ import ch.uzh.ifi.seal.changedistiller.model.entities.StructureEntityVersion;
  * 
  * @author Adam Wierzbicki
  */
-public class GroupDataSetBuilder extends ChunkDataSetBuilder {
+public class StandardDataSetBuilder extends ChunkDataSetBuilder {
 	
 	public static final Attribute NUM_COMMITS = new Attribute("numCommits");
 	public static final Attribute NUM_AUTHORS = new Attribute("numAuthors");
@@ -37,9 +39,9 @@ public class GroupDataSetBuilder extends ChunkDataSetBuilder {
 	private int firstCommitTime;
 
 	/**
-	 * Construct a new group data set builder.
+	 * Construct a new StandardDataSetBuilder.
 	 */
-	public GroupDataSetBuilder() {
+	public StandardDataSetBuilder() {
 		super(false);
 		this.authors = new HashSet<String>();
 		this.firstCommitTime = 0;
@@ -56,7 +58,7 @@ public class GroupDataSetBuilder extends ChunkDataSetBuilder {
 	}
 	
 	@Override
-	public GroupDataSetBuilder readCommits(Iterable<RevCommit> commits) {
+	public StandardDataSetBuilder readCommits(Iterable<RevCommit> commits) {
 		super.readCommits(commits);
 		for (CommitInfo commitInfo: this.commitExtractor.getAllCommitInfos()) {
 			this.firstCommitTime = Math.min(this.firstCommitTime, commitInfo.getTime());

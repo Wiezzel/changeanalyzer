@@ -2,14 +2,14 @@ package pl.edu.mimuw.changeanalyzer.models.measures;
 
 import java.util.List;
 
-import pl.edu.mimuw.changeanalyzer.models.GroupDataSetBuilder;
+import pl.edu.mimuw.changeanalyzer.models.standard.StandardDataSetBuilder;
 import ch.uzh.ifi.seal.changedistiller.model.entities.StructureEntityVersion;
 
 
 /**
  * This measure assigns bug-proneness score propoportionally to the
  * number of fine-grained changes since the last bug-fix. It assigns
- * each group of commits (see {@link GroupDataSetBuilder}) a score
+ * each group of commits (see {@link StandardDataSetBuilder}) a score
  * equal to the ratio of number of changes in this group to the total
  * number of changes in the whole chunk.
  * 

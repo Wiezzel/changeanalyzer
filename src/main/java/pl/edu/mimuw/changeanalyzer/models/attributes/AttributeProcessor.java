@@ -1,6 +1,6 @@
 package pl.edu.mimuw.changeanalyzer.models.attributes;
 
-import pl.edu.mimuw.changeanalyzer.exceptions.AttributeProcessingException;
+import pl.edu.mimuw.changeanalyzer.exceptions.ProcessingException;
 import weka.core.Attribute;
 import weka.core.Instances;
 
@@ -46,8 +46,8 @@ public abstract class AttributeProcessor {
 	 *  
 	 * @param data	Input data set to be processed
 	 * @return		Data set with added new attribute
-	 * @throws AttributeProcessingException
+	 * @throws ProcessingException
 	 */
-	public abstract Instances processAttributes(Instances data) throws AttributeProcessingException;
+	public abstract Instances processAttributes(Instances data) throws ProcessingException;
 
 }

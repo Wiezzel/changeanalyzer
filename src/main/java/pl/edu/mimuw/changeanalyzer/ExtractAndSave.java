@@ -9,10 +9,10 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import pl.edu.mimuw.changeanalyzer.exceptions.ChangeAnalyzerException;
 import pl.edu.mimuw.changeanalyzer.extraction.ClassHistoryWrapper;
 import pl.edu.mimuw.changeanalyzer.extraction.RepoHistoryExtractor;
-import pl.edu.mimuw.changeanalyzer.models.GroupDataSetBuilder;
 import pl.edu.mimuw.changeanalyzer.models.measures.GeometricMeasure;
 import pl.edu.mimuw.changeanalyzer.models.measures.LinearMeasure;
 import pl.edu.mimuw.changeanalyzer.models.measures.WeightedMeasure;
+import pl.edu.mimuw.changeanalyzer.models.standard.StandardDataSetBuilder;
 import weka.core.Instances;
 import weka.core.converters.ArffSaver;
 import weka.core.converters.Saver;
@@ -31,7 +31,7 @@ public class ExtractAndSave {
 		ClassHistoryWrapper wrapper = new ClassHistoryWrapper(map.values());
 		Iterable<RevCommit> commits = extractor.extractCommits();
 		
-		GroupDataSetBuilder builder = new GroupDataSetBuilder();
+		StandardDataSetBuilder builder = new StandardDataSetBuilder();
 		Instances cgDataSet = builder
 				.addMeasure(new GeometricMeasure(0.7))
 				.addMeasure(new LinearMeasure(0.0))

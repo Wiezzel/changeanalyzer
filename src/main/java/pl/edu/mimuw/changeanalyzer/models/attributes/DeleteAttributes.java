@@ -2,7 +2,7 @@ package pl.edu.mimuw.changeanalyzer.models.attributes;
 
 import java.util.Arrays;
 
-import pl.edu.mimuw.changeanalyzer.exceptions.AttributeProcessingException;
+import pl.edu.mimuw.changeanalyzer.exceptions.ProcessingException;
 import weka.core.Instances;
 
 
@@ -24,7 +24,7 @@ public class DeleteAttributes extends AttributeProcessor {
 	}
 
 	@Override
-	public Instances processAttributes(Instances data) throws AttributeProcessingException {
+	public Instances processAttributes(Instances data) throws ProcessingException {
 		Instances result = new Instances(data);
 		for (int i = this.sourceAttributeIndices.length - 1; i >=0; --i) {
 			result.deleteAttributeAt(i);

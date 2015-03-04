@@ -4,7 +4,7 @@ import java.util.Arrays;
 
 import org.apache.commons.lang3.StringUtils;
 
-import pl.edu.mimuw.changeanalyzer.exceptions.AttributeProcessingException;
+import pl.edu.mimuw.changeanalyzer.exceptions.ProcessingException;
 import weka.core.Attribute;
 import weka.core.Instances;
 import weka.filters.Filter;
@@ -43,11 +43,11 @@ public class SumAttributes extends AttributeProcessor {
 	}
 
 	@Override
-	public Instances processAttributes(Instances data) throws AttributeProcessingException {
+	public Instances processAttributes(Instances data) throws ProcessingException {
 		try {
 			return Filter.useFilter(data, this.filter);
 		} catch (Exception e) {
-			throw new AttributeProcessingException(e);
+			throw new ProcessingException(e);
 		}
 	}
 
