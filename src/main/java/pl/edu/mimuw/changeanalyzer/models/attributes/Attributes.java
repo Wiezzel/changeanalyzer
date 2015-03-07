@@ -71,6 +71,26 @@ public class Attributes {
 	}
 	
 	/**
+	 * Get an attribute.
+	 * 
+	 * @param index Index of the attribute to get
+	 * @return Attribute with the given index
+	 */
+	public Attribute getAttribute(int index) {
+		return this.attributes.get(index);
+	}
+	
+	/**
+	 * Get an attribute.
+	 * 
+	 * @param name Name of the attribute to get
+	 * @return Attribute with the given name
+	 */
+	public Attribute getAttribute(String name) {
+		return this.getAttribute(this.getAttributeIndex(name));
+	}
+	
+	/**
 	 * Get the numeric index of an attribute.
 	 * 
 	 * @param name Name of the attribute to get index of

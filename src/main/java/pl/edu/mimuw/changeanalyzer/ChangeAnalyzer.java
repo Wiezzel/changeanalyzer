@@ -1,6 +1,9 @@
 package pl.edu.mimuw.changeanalyzer;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -8,14 +11,15 @@ import java.util.Map;
 import pl.edu.mimuw.changeanalyzer.exceptions.ChangeAnalyzerException;
 import pl.edu.mimuw.changeanalyzer.exceptions.PredictionException;
 import pl.edu.mimuw.changeanalyzer.models.DataSetProvider;
-import pl.edu.mimuw.changeanalyzer.models.measures.BugPronenessMeasure;
-import pl.edu.mimuw.changeanalyzer.models.measures.LinearMeasure;
+import pl.edu.mimuw.changeanalyzer.models.ReadOnlyDataSetProvider;
 import pl.edu.mimuw.changeanalyzer.models.standard.StandardDataSetProvider;
 import weka.classifiers.Classifier;
 import weka.classifiers.meta.FilteredClassifier;
 import weka.classifiers.trees.RandomForest;
 import weka.core.Instance;
 import weka.core.Instances;
+import weka.core.converters.ArffSaver;
+import weka.core.converters.Saver;
 import weka.filters.unsupervised.attribute.RemoveType;
 
 
@@ -38,12 +42,22 @@ public class ChangeAnalyzer {
 		this.classifier = filteredClassifier;
 	}
 	
-	public void extractData(String repoPath) throws IOException, ChangeAnalyzerException {
-		this.provider.extractDataFromRepository(repoPath);
+	public void extractData(File repoDir) throws IOException, ChangeAnalyzerException {
+		this.provider.extractDataFromRepository(repoDir);
 	}
 	
-	public void readData(String dataPath) throws IOException {
-		this.provider.readDataFromFile(dataPath);
+	public void readData(File dataFile, boolean raw) throws IOException {
+		this.provider.readDataFromFile(dataFile, raw);
+	}
+	
+	public void saveData(File dataFile) throws IOException {
+		if (!this.provider.isDataReady()) {
+			throw new IllegalStateException("No data to save");
+		}
+		Saver saver = new ArffSaver();
+		saver.setFile(dataFile);
+		saver.setInstances(this.provider.getAllInstances());
+		saver.writeBatch();
 	}
 	
 	public void classifyMethods() throws ChangeAnalyzerException {
@@ -66,8 +80,12 @@ public class ChangeAnalyzer {
 		}
 	}
 	
-	public void saveResults(String resultPath) {
-		// TODO
+	public void saveResults(File resultFile) throws FileNotFoundException {
+		PrintStream printStream = new PrintStream(resultFile);
+		for (Map.Entry<String, Double> entry: this.results.entrySet()) {
+			printStream.println(entry.getKey() + "\t" + entry.getValue());
+		}
+		printStream.close();
 	}
 	
 	public Map<String, Double> getResults() {
@@ -75,15 +93,30 @@ public class ChangeAnalyzer {
 	}
 
 	public static void main(String[] args) throws IOException, ChangeAnalyzerException {
-		BugPronenessMeasure measure = new LinearMeasure(0.0);
-		DataSetProvider provider = StandardDataSetProvider.getInstance(measure);
+		ChangeAnalyzerOptionParser parser = new ChangeAnalyzerOptionParser();
+		parser.parse(args);
+		if (!parser.isParsed()) {
+			return;
+		}
+		
+		DataSetProvider provider = parser.hasExtractOption()
+				? StandardDataSetProvider.getInstance(parser.getMeasure())
+				: new ReadOnlyDataSetProvider();
 		Classifier classifier = new RandomForest();
 		ChangeAnalyzer analyzer = new ChangeAnalyzer(provider, classifier);
 		
-		analyzer.readData(args[0]);
-		analyzer.classifyMethods();
-		for (Map.Entry<String, Double> entry: analyzer.getResults().entrySet()) {
-			System.out.println(entry.getKey() + ": " + entry.getValue());
+		if (parser.hasExtractOption()) {
+			analyzer.extractData(parser.getExtractDir());
+		} else {
+			analyzer.readData(parser.getReadFile(), false);
+		}
+		
+		if (parser.hasSaveOption()) {
+			analyzer.saveData(parser.getSaveFile());
+		}
+		if (parser.hasClassifyOption()) {
+			analyzer.classifyMethods();
+			analyzer.saveResults(parser.getResultFile());
 		}
 	}
 

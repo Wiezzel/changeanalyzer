@@ -1,7 +1,5 @@
 package pl.edu.mimuw.changeanalyzer.models.standard;
 
-import java.util.Arrays;
-
 import org.apache.commons.lang3.ArrayUtils;
 
 import pl.edu.mimuw.changeanalyzer.exceptions.ProcessingException;
@@ -14,7 +12,7 @@ import weka.core.Attribute;
 import weka.core.Instances;
 
 
-public class StandardDataSetProcessor extends DataSetProcessor {
+public class StandardDataSetProcessor implements DataSetProcessor {
 	
 	public static final String[] DISCARD_ATTRIBUTES = {
 		"ADDING_ATTRIBUTE_MODIFIABILITY",
@@ -63,41 +61,34 @@ public class StandardDataSetProcessor extends DataSetProcessor {
 		"RETURN_TYPE_INSERT"
 	};
 	
-	public static final Attribute PARAM_CHANGE = new Attribute("paramChange");
+	public static final Attribute PARAMS_CHANGE = new Attribute("paramsChange");
 	public static final Attribute HEADER_CHANGE = new Attribute("headerChange");
 	
-	private int[] paramChangeIndices;
+	private int[] paramsChangeIndices;
 	private int[] headerChnageIndices;
 	private int[] allDeleteIndices;
-	
-	public StandardDataSetProcessor(Attributes attributes, int classIndex) {
-		super(attributes, classIndex);
-		this.initAttributeIndices();
-	}
-
-	public StandardDataSetProcessor(Attributes attributes, Attribute classAttr) {
-		super(attributes, classAttr);
-		this.initAttributeIndices();
-	}
+	private String classAttrName;
 
 	public StandardDataSetProcessor(Attributes attributes, String classAttrName) {
-		super(attributes, classAttrName);
-		this.initAttributeIndices();
+		this.classAttrName = classAttrName;
+		this.paramsChangeIndices = attributes.getAttributeIndices(PARAM_CHANGE_ATTRIBUTES);
+		this.headerChnageIndices = attributes.getAttributeIndices(HEADER_CHANGE_ATTRIBUTES);
+		this.allDeleteIndices = ArrayUtils.addAll(ArrayUtils.addAll(this.paramsChangeIndices,
+				this.headerChnageIndices), attributes.getAttributeIndices(DISCARD_ATTRIBUTES));
 	}
 	
-	private void initAttributeIndices() {
-		this.paramChangeIndices = this.attributes.getAttributeIndices(PARAM_CHANGE_ATTRIBUTES);
-		this.headerChnageIndices = this.attributes.getAttributeIndices(HEADER_CHANGE_ATTRIBUTES);
-		this.allDeleteIndices = ArrayUtils.addAll(ArrayUtils.addAll(this.paramChangeIndices,
-				this.headerChnageIndices), this.attributes.getAttributeIndices(DISCARD_ATTRIBUTES));
+	public StandardDataSetProcessor(Attributes attributes, Attribute classAttribute) {
+		this(attributes, classAttribute.name());
 	}
-
+	
+	public StandardDataSetProcessor(Attributes attributes, int classIndex) {
+		this(attributes, attributes.getAttribute(classIndex));
+	}
+	
 	@Override
 	public Instances processDataSet(Instances dataSet) throws ProcessingException {
-		dataSet.setClassIndex(classIndex);
-		
-		AttributeProcessor paramProcessor = new SumAttributes(this.paramChangeIndices, PARAM_CHANGE, dataSet);
-		dataSet = paramProcessor.processAttributes(dataSet);
+		AttributeProcessor paramsProcessor = new SumAttributes(this.paramsChangeIndices, PARAMS_CHANGE, dataSet);
+		dataSet = paramsProcessor.processAttributes(dataSet);
 
 		AttributeProcessor headerProcessor = new SumAttributes(this.headerChnageIndices, HEADER_CHANGE, dataSet);
 		dataSet = headerProcessor.processAttributes(dataSet);
@@ -106,6 +97,12 @@ public class StandardDataSetProcessor extends DataSetProcessor {
 		dataSet = deleteProcessor.processAttributes(dataSet);
 
 		return dataSet;
+	}
+
+	@Override
+	public void setClassAttribute(Instances dataSet) throws ProcessingException {
+		Attribute classAttribute = dataSet.attribute(this.classAttrName);
+		dataSet.setClass(classAttribute);
 	}
 
 }

@@ -7,8 +7,8 @@ import java.util.Map;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 
-import pl.edu.mimuw.changeanalyzer.exceptions.ProcessingException;
 import pl.edu.mimuw.changeanalyzer.exceptions.ChangeAnalyzerException;
+import pl.edu.mimuw.changeanalyzer.exceptions.ProcessingException;
 import pl.edu.mimuw.changeanalyzer.extraction.ClassHistoryWrapper;
 import pl.edu.mimuw.changeanalyzer.extraction.RepoHistoryExtractor;
 import weka.core.Attribute;
@@ -46,24 +46,6 @@ public class DataSetProvider {
 		this.extractData();
 	}
 	
-	public void readDataFromFile(String dataPath) throws IOException {
-		try {
-			DataSource dataSource = new DataSource(dataPath);
-			this.dataSet = dataSource.getDataSet();
-			this.dataSet = this.processor.processDataSet(this.dataSet);
-		} catch (Exception e) {
-			throw new IOException(e);
-		}
-	}
-	
-	public void readDataFromFile(File dataFile) throws IOException {
-		this.readDataFromFile(dataFile.getAbsolutePath());
-	}
-	
-	public boolean isDataReady() {
-		return this.dataSet != null;
-	}
-	
 	private void extractData() throws IOException, ChangeAnalyzerException {
 		Map<String, ClassHistory> classHistoryMap = this.extractor.extractClassHistories();
 		ClassHistoryWrapper histories = new ClassHistoryWrapper(classHistoryMap.values());
@@ -71,6 +53,31 @@ public class DataSetProvider {
 		
 		this.dataSet = this.builder.readCommits(commits).buildDataSet("", histories);
 		this.dataSet = this.processor.processDataSet(this.dataSet);
+	}
+	
+	public void readDataFromFile(String dataPath, boolean raw) throws IOException {
+		try {
+			DataSource dataSource = new DataSource(dataPath);
+			this.dataSet = dataSource.getDataSet();
+			this.processor.setClassAttribute(this.dataSet);
+			if (raw) {
+				this.dataSet = this.processor.processDataSet(this.dataSet);
+			}
+		} catch (Exception e) {
+			throw new IOException(e);
+		}
+	}
+	
+	public void readDataFromFile(File dataFile, boolean raw) throws IOException {
+		this.readDataFromFile(dataFile.getAbsolutePath(), raw);
+	}
+	
+	public boolean isDataReady() {
+		return this.dataSet != null;
+	}
+	
+	public Instances getAllInstances() {
+		return new Instances(this.dataSet);
 	}
 	
 	public Instances getTrainingInstances() {
