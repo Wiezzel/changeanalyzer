@@ -33,7 +33,7 @@ public class SumAttributes extends AttributeProcessor {
 		try {
 			this.filter = new AddExpression();
 			String expression = "a" + StringUtils.join(Arrays.stream(sourceAttributeIndices)
-				.mapToObj(String::valueOf).iterator(), "+a");
+				.mapToObj(x -> String.valueOf(x + 1)).iterator(), "+a");
 			this.filter.setExpression(expression);
 			this.filter.setName(resultAttribute.name());
 			filter.setInputFormat(inputFormat);
