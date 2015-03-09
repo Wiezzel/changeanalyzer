@@ -23,18 +23,45 @@ import weka.core.converters.Saver;
 import weka.filters.unsupervised.attribute.RemoveType;
 
 
+/**
+ * ChangeAnalyzer is the main class of this project. It provides the 
+ * following functions:
+ * <ul>
+ * 		<li>Extract data from a repository</li>
+ * 		<li>Read extracted data from an ARFF file</li>
+ * 		<li>Save extracted data to an ARFF file</li>
+ * 		<li>Classify instances (methods) with missing class attrribute</li>
+ * </ul>
+ * Classification is printed in the form of tab-separated records containing
+ * method headers and bug-proneness scores.
+ * 
+ * @author Adam Wierzbicki
+ */
 public class ChangeAnalyzer {
 
 	private DataSetProvider provider;
 	private Map<String, Double> results;
 	private Classifier classifier;
 	
+	/**
+	 * Construct a new ChangeAnalyzer.
+	 * 
+	 * @param provider		Data set provider to be used by this analyzer
+	 * @param classifier	Classifier to be used by this analyzer
+	 */
 	public ChangeAnalyzer(DataSetProvider provider, Classifier classifier) {
 		this.provider = provider;
 		this.results = new HashMap<String, Double>();
 		this.wrapClassifier(classifier);
 	}
 	
+	/**
+	 * Wrap the given classifier in a {@link FilteredClassifier}. This
+	 * removes all String attributes from instances before putting them
+	 * into the wrapped classifier.
+	 * 
+	 * @param classifier Classifier to be wrapped
+	 */
 	private void wrapClassifier(Classifier classifier) {
 		FilteredClassifier filteredClassifier = new FilteredClassifier();
 		filteredClassifier.setClassifier(classifier);
@@ -42,14 +69,32 @@ public class ChangeAnalyzer {
 		this.classifier = filteredClassifier;
 	}
 	
+	/**
+	 * Extract data from a Git repository.
+	 * 
+	 * @param repoDir Directory with the repository to extract data from
+	 * @throws IOException
+	 * @throws ChangeAnalyzerException
+	 */
 	public void extractData(File repoDir) throws IOException, ChangeAnalyzerException {
 		this.provider.extractDataFromRepository(repoDir);
 	}
 	
-	public void readData(File dataFile, boolean raw) throws IOException {
-		this.provider.readDataFromFile(dataFile, raw);
+	/**
+	 * Read previously extracted data from a file.
+	 * @param dataFile File to read data from
+	 * @throws IOException
+	 */
+	public void readData(File dataFile) throws IOException {
+		this.provider.readDataFromFile(dataFile, false);
 	}
 	
+	/**
+	 * Save extracted data to a file.
+	 * 
+	 * @param dataFile File to save data into
+	 * @throws IOException
+	 */
 	public void saveData(File dataFile) throws IOException {
 		if (!this.provider.isDataReady()) {
 			throw new IllegalStateException("No data to save");
@@ -60,6 +105,14 @@ public class ChangeAnalyzer {
 		saver.writeBatch();
 	}
 	
+	/**
+	 * Classify methods lacking class attribute (from the previously etcracted
+	 * or read data). Prior to calling this method, {@link #extractData(File)}
+	 * or {@link #readData(File)} should be invoked, otherwise an
+	 * {@link IllegalStateException} will be thrown.
+	 * 
+	 * @throws ChangeAnalyzerException
+	 */
 	public void classifyMethods() throws ChangeAnalyzerException {
 		if (!this.provider.isDataReady()) {
 			throw new IllegalStateException("Data not loaded");
@@ -80,6 +133,12 @@ public class ChangeAnalyzer {
 		}
 	}
 	
+	/**
+	 * Save classification results to a file.
+	 * 
+	 * @param resultFile File to save classification into
+	 * @throws FileNotFoundException
+	 */
 	public void saveResults(File resultFile) throws FileNotFoundException {
 		PrintStream printStream = new PrintStream(resultFile);
 		for (Map.Entry<String, Double> entry: this.results.entrySet()) {
@@ -88,10 +147,24 @@ public class ChangeAnalyzer {
 		printStream.close();
 	}
 	
+	/**
+	 * Get classification results.
+	 * 
+	 * @return	Map containing mehtod headers as keys and bug-proneness scores
+	 * 			as values.
+	 */
 	public Map<String, Double> getResults() {
 		return Collections.unmodifiableMap(this.results);
 	}
 
+	/**
+	 * Main method creates a new ChangeAnalyzer and performs operations specified
+	 * in arguments. To see usage, run it with "--help" argument.
+	 * 
+	 * @param args Command-line arguments
+	 * @throws IOException
+	 * @throws ChangeAnalyzerException
+	 */
 	public static void main(String[] args) throws IOException, ChangeAnalyzerException {
 		ChangeAnalyzerOptionParser parser = new ChangeAnalyzerOptionParser();
 		parser.parse(args);
@@ -108,7 +181,7 @@ public class ChangeAnalyzer {
 		if (parser.hasExtractOption()) {
 			analyzer.extractData(parser.getExtractDir());
 		} else {
-			analyzer.readData(parser.getReadFile(), false);
+			analyzer.readData(parser.getReadFile());
 		}
 		
 		if (parser.hasSaveOption()) {

@@ -1,6 +1,11 @@
 package pl.edu.mimuw.changeanalyzer.exceptions;
 
 
+/**
+ * Exception thrown due to an error in performing bug-proneness prediction.
+ * 
+ * @author Adam Wierzbicki
+ */
 public class PredictionException extends ChangeAnalyzerException {
 
 	private static final long serialVersionUID = 3692808373069386287L;

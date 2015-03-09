@@ -19,9 +19,21 @@ import pl.edu.mimuw.changeanalyzer.models.measures.GeometricMeasure;
 import pl.edu.mimuw.changeanalyzer.models.measures.LinearMeasure;
 
 
+/**
+ * Parser of command-line options for {@link ChangeAnalyzer#main(String[])}.
+ * 
+ * @author Adam Wierzbicki
+ */
 public class ChangeAnalyzerOptionParser {
 	
+	/**
+	 * Default initial bug-proneness for {@link LinearMeasure}
+	 */
 	public static final double DEFAULT_INIT_PRONENESS = 0.0;
+	
+	/**
+	 * Default bug-proneness decrease ratio for {@link GeometricMeasure}
+	 */
 	public static final double DEFAULT_DECR_RATIO = 0.7;
 	
 	private Option extract;
@@ -34,6 +46,9 @@ public class ChangeAnalyzerOptionParser {
 	private Parser parser;
 	private CommandLine commandLine;
 
+	/**
+	 * Construct a new ChangeAnalyzerOptionParser.
+	 */
 	public ChangeAnalyzerOptionParser() {
 		DefaultOptionBuilder optBuilder = new DefaultOptionBuilder();
 		ArgumentBuilder argBuilder = new ArgumentBuilder();
@@ -168,54 +183,126 @@ public class ChangeAnalyzerOptionParser {
 		this.parser.setHelpOption(help);
 	}
 	
+	/**
+	 * Parse command-line arguments.
+	 * 
+	 * @param args Arguments to be parsed
+	 */
 	public void parse(String[] args) {
 		this.commandLine = this.parser.parseAndHelp(args);
 	}
 	
+	/**
+	 * Check whether this parser has succesfully parsed arguments.
+	 * 
+	 * @return True iff this parser has parsed arguments
+	 */
 	public boolean isParsed() {
 		return this.commandLine != null;
 	}
 	
+	/**
+	 * Check whether the "--extract" option has been provided in arguments
+	 * parsed by this parser. 
+	 * 
+	 * @return True iff the "--extract" option has been provided
+	 * @throws IllegalStateException if arguments have not been parsed
+	 */
 	public boolean hasExtractOption() {
 		this.assertParsed();
 		return this.commandLine.hasOption(this.extract);
 	}
 	
+	/**
+	 * Get the directory given as source for data extraction in arguments
+	 * parsed by this parser.
+	 * 
+	 * @return Directory to extract data from
+	 * @throws IllegalStateException if arguments have not been parsed
+	 */
 	public File getExtractDir() {
 		this.assertParsed();
 		return (File) this.commandLine.getValue(this.extract);
 	}
 	
+	/**
+	 * Check whether the "--read" option has been provided in arguments
+	 * parsed by this parser. 
+	 * 
+	 * @return True iff the "--read" option has been provided
+	 * @throws IllegalStateException if arguments have not been parsed
+	 */
 	public boolean hasReadOption() {
 		this.assertParsed();
 		return this.commandLine.hasOption(this.read);
 	}
 	
+	/**
+	 * Get the file given as source for reading data in arguments parsed 
+	 * by this parser.
+	 * 
+	 * @return File to read data from
+	 * @throws IllegalStateException if arguments have not been parsed
+	 */
 	public File getReadFile() {
 		this.assertParsed();
 		return (File) this.commandLine.getValue(this.read);
 	}
 	
+	/**
+	 * Check whether the "--save" option has been provided in arguments
+	 * parsed by this parser. 
+	 * 
+	 * @return True iff the "--save" option has been provided
+	 * @throws IllegalStateException if arguments have not been parsed
+	 */
 	public boolean hasSaveOption() {
 		this.assertParsed();
 		return this.commandLine.hasOption(this.save);
 	}
 	
+	/**
+	 * Get the file given as target for saving data in arguments parsed 
+	 * by this parser.
+	 * 
+	 * @return File to save extracted data into
+	 * @throws IllegalStateException if arguments have not been parsed
+	 */
 	public File getSaveFile() {
 		this.assertParsed();
 		return (File) this.commandLine.getValue(this.save);
 	}
 	
+	/**
+	 * Check whether the "--classify" option has been provided in arguments
+	 * parsed by this parser. 
+	 * 
+	 * @return True iff the "--classify" option has been provided
+	 * @throws IllegalStateException if arguments have not been parsed
+	 */
 	public boolean hasClassifyOption() {
 		this.assertParsed();
 		return this.commandLine.hasOption(this.classify);
 	}
 	
+	/**
+	 * Get the file given as target for saving method classification results
+	 * in arguments parsed by this parser.
+	 * 
+	 * @return File to save extracted data into
+	 * @throws IllegalStateException if arguments have not been parsed
+	 */
 	public File getResultFile() {
 		this.assertParsed();
 		return (File) this.commandLine.getValue(this.classify);
 	}
 	
+	/**
+	 * Get the bug-proneness measure specified in arguments parsed by this parser.
+	 * 
+	 * @return Specified bug-proneness measure
+	 * @throws IllegalStateException if arguments have not been parsed
+	 */
 	public BugPronenessMeasure getMeasure() {
 		this.assertParsed();
 		if (this.commandLine.hasOption(this.geomMeasure)) {
@@ -226,6 +313,9 @@ public class ChangeAnalyzerOptionParser {
 		return new LinearMeasure(initBugProneness.doubleValue());
 	}
 
+	/**
+	 * Assert that arguments have been parsed.
+	 */
 	private void assertParsed() {
 		if (!this.isParsed())
 			throw new IllegalStateException("Arguments are not parsed");

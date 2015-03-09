@@ -10,6 +10,7 @@ import pl.edu.mimuw.changeanalyzer.extraction.AuthorInfo;
 import pl.edu.mimuw.changeanalyzer.extraction.CommitInfo;
 import pl.edu.mimuw.changeanalyzer.models.ChangeCounter;
 import pl.edu.mimuw.changeanalyzer.models.ChunkDataSetBuilder;
+import pl.edu.mimuw.changeanalyzer.models.measures.BugPronenessMeasure;
 import weka.core.Attribute;
 import weka.core.Instance;
 import ch.uzh.ifi.seal.changedistiller.model.entities.StructureEntityVersion;
@@ -63,6 +64,12 @@ public class StandardDataSetBuilder extends ChunkDataSetBuilder {
 		for (CommitInfo commitInfo: this.commitExtractor.getAllCommitInfos()) {
 			this.firstCommitTime = Math.min(this.firstCommitTime, commitInfo.getTime());
 		}
+		return this;
+	}
+	
+	@Override
+	public StandardDataSetBuilder addMeasure(BugPronenessMeasure measure) {
+		super.addMeasure(measure);
 		return this;
 	}
 	

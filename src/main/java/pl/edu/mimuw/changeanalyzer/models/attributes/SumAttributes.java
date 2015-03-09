@@ -12,7 +12,8 @@ import weka.filters.unsupervised.attribute.AddExpression;
 
 
 /**
- * Attribute processor class that sums the source attributes.
+ * Attribute processor which adds to the data set a new attribute being
+ * the sum the processor's source attributes.
  * 
  * @author Adam Wierzbicki
  */

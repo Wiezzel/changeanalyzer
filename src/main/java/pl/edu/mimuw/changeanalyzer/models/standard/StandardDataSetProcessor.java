@@ -12,8 +12,25 @@ import weka.core.Attribute;
 import weka.core.Instances;
 
 
+/**
+ * Stadard data set processor used by ChangeAnalyzer for processing raw
+ * data sets built by a {@link StandardDataSetBuilder}. It perfoms the
+ * following modifications:
+ * <ul>
+ * 		<li>Discards unimportant attributes listed in {@link #DISCARD_ATTRIBUTES}.</li>
+ * 		<li>Sums values of parameter change-related attributes listed in
+ * 			{@link #PARAMS_CHANGE_ATTRIBUTES} into a new attribute {@link #PARAMS_CHANGE}.</li>
+ * 		<li>Sums values of header change-related atrributes listed in
+ * 			{@link #HEADER_CHANGE_ATTRIBUTES} into a new attribute {@link #HEADER_CHANGE}.</li>
+ * </ul>
+ * 
+ * @author Adam Wierzbicki
+ */
 public class StandardDataSetProcessor implements DataSetProcessor {
 	
+	/**
+	 * Attributes to remove from a data set.
+	 */
 	public static final String[] DISCARD_ATTRIBUTES = {
 		"ADDING_ATTRIBUTE_MODIFIABILITY",
 		"ADDING_CLASS_DERIVABILITY",
@@ -43,13 +60,23 @@ public class StandardDataSetProcessor implements DataSetProcessor {
 		"REMOVING_CLASS_DERIVABILITY",
 		"UNCLASSIFIED_CHANGE"
 	};
-	public static final String[] PARAM_CHANGE_ATTRIBUTES = {
+	
+	/**
+	 * Attributes describing paramters changes (deletion, insertion,
+	 * renaming, reordering or type change).
+	 */
+	public static final String[] PARAMS_CHANGE_ATTRIBUTES = {
 		"PARAMETER_DELETE",
 		"PARAMETER_INSERT",
 		"PARAMETER_ORDERING_CHANGE",
 		"PARAMETER_RENAMING",
 		"PARAMETER_TYPE_CHANGE"
 	};
+	
+	/**
+	 * Attributes describing header changes (method name, overridability,
+	 * accessibiblity and return type).
+	 */
 	public static final String[] HEADER_CHANGE_ATTRIBUTES = {
 		"ADDING_METHOD_OVERRIDABILITY",
 		"DECREASING_ACCESSIBILITY_CHANGE",
@@ -69,18 +96,42 @@ public class StandardDataSetProcessor implements DataSetProcessor {
 	private int[] allDeleteIndices;
 	private String classAttrName;
 
+	/**
+	 * Construct a new StandardDataSetProcessor.
+	 * 
+	 * @param attributes	Attributes of the data sets which are to be processed by this
+	 * 						processor. (Must include all attributes listed in {@link #DISCARD_ATTRIBUTES}
+	 * 						{@link #PARAMS_CHANGE_ATTRIBUTES} and {@link #HEADER_CHANGE_ATTRIBUTES}).
+	 * @param classAttrName	Name of the class (bug-proneness) attribute
+	 */
 	public StandardDataSetProcessor(Attributes attributes, String classAttrName) {
 		this.classAttrName = classAttrName;
-		this.paramsChangeIndices = attributes.getAttributeIndices(PARAM_CHANGE_ATTRIBUTES);
+		this.paramsChangeIndices = attributes.getAttributeIndices(PARAMS_CHANGE_ATTRIBUTES);
 		this.headerChnageIndices = attributes.getAttributeIndices(HEADER_CHANGE_ATTRIBUTES);
 		this.allDeleteIndices = ArrayUtils.addAll(ArrayUtils.addAll(this.paramsChangeIndices,
 				this.headerChnageIndices), attributes.getAttributeIndices(DISCARD_ATTRIBUTES));
 	}
 	
+	/**
+	 * Construct a new StandardDataSetProcessor.
+	 * 
+	 * @param attributes		Attributes of the data sets which are to be processed by this
+	 * 							processor. (Must include all attributes listed in {@link #DISCARD_ATTRIBUTES}
+	 * 							{@link #PARAMS_CHANGE_ATTRIBUTES} and {@link #HEADER_CHANGE_ATTRIBUTES}).
+	 * @param classAttribute	Class attribute (bug-proneness).
+	 */
 	public StandardDataSetProcessor(Attributes attributes, Attribute classAttribute) {
 		this(attributes, classAttribute.name());
 	}
 	
+	/**
+	 * Construct a new StandardDataSetProcessor.
+	 * 
+	 * @param attributes	Attributes of the data sets which are to be processed by this
+	 * 						processor. (Must include all attributes listed in {@link #DISCARD_ATTRIBUTES}
+	 * 						{@link #PARAMS_CHANGE_ATTRIBUTES} and {@link #HEADER_CHANGE_ATTRIBUTES}).
+	 * @param classIndex	Index of the class (bug-proneness) attribute
+	 */
 	public StandardDataSetProcessor(Attributes attributes, int classIndex) {
 		this(attributes, attributes.getAttribute(classIndex));
 	}

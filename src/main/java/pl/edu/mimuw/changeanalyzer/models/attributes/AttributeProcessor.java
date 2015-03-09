@@ -6,8 +6,7 @@ import weka.core.Instances;
 
 
 /**
- * Abstract class for adding new attributes to a data set, computed
- * from existing attributes.
+ * Abstract class for manipulating attributes of a data set.
  * 
  * @author Adam Wierzbicki
  */
@@ -19,7 +18,7 @@ public abstract class AttributeProcessor {
 	/**
 	 * Construct a new AttributeProcessor.
 	 * 
-	 * @param sourceAttributeIndices	Indices of source attributes used for computation of a new one
+	 * @param sourceAttributeIndices	Indices of source attributes used by this attribute processor
 	 * 									(length of this array should be at least 1)
 	 * @param resultAttribute			New attribute to be computed
 	 */
@@ -42,10 +41,10 @@ public abstract class AttributeProcessor {
 	}
 	
 	/**
-	 * Process a data set - compute values of the new attribute and add them to the data set.
+	 * Process a data set.
 	 *  
 	 * @param data	Input data set to be processed
-	 * @return		Data set with added new attribute
+	 * @return		Processed data set
 	 * @throws ProcessingException
 	 */
 	public abstract Instances processAttributes(Instances data) throws ProcessingException;

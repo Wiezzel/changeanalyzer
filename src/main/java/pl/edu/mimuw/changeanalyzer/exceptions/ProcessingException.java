@@ -1,6 +1,11 @@
 package pl.edu.mimuw.changeanalyzer.exceptions;
 
 
+/**
+ * Exception thrown when an error occurs during processing a data set.
+ * 
+ * @author Adam Wierzbicki
+ */
 public class ProcessingException extends ChangeAnalyzerException {
 
 	private static final long serialVersionUID = 6337220476419627088L;

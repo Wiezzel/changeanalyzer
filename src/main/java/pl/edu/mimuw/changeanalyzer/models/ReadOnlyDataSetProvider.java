@@ -9,8 +9,19 @@ import pl.edu.mimuw.changeanalyzer.exceptions.ProcessingException;
 import weka.core.Instances;
 
 
+/**
+ * Simple data set provider which is uncapable of extracting or processing data.
+ * It expects processed data with class attribute on the last position.
+ * Any call to extractDataFromRepository or call to readDataFromFile with `raw`
+ * argument set to true will throw an {@link UnsupportedOperationException}.
+ * 
+ * @author Adam Wierzbicki
+ */
 public class ReadOnlyDataSetProvider extends DataSetProvider {
 
+	/**
+	 * Construct a new ReadOnlyDataSetProvider.
+	 */
 	public ReadOnlyDataSetProvider() {
 		super(null, new DefaultDataSetProcessor());
 	}
