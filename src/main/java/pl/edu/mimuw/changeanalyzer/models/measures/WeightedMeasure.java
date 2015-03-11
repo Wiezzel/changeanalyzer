@@ -22,6 +22,7 @@ public class WeightedMeasure implements BugPronenessMeasure {
 
 	@Override
 	public void startNewChunk(List<StructureEntityVersion> chunk) {
+		this.totalNumChanges = 0;
 		this.numChanges = new int[chunk.size()];
 		int i = 0;
 		for (StructureEntityVersion version: chunk) {
