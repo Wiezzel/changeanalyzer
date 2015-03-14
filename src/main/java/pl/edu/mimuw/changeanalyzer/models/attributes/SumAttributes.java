@@ -17,7 +17,7 @@ import weka.filters.unsupervised.attribute.AddExpression;
  * 
  * @author Adam Wierzbicki
  */
-public class SumAttributes extends AttributeProcessor {
+public class SumAttributes implements AttributeProcessor {
 	
 	private AddExpression filter;
 
@@ -30,7 +30,9 @@ public class SumAttributes extends AttributeProcessor {
 	 * @param inputFormat				Input format of the data to be processed
 	 */
 	public SumAttributes(int[] sourceAttributeIndices, Attribute resultAttribute, Instances inputFormat) {
-		super(sourceAttributeIndices, resultAttribute);
+		if (sourceAttributeIndices.length < 1) {
+			throw new IllegalArgumentException("Attribute processor requires at least one argument");
+		}
 		try {
 			this.filter = new AddExpression();
 			String expression = "a" + StringUtils.join(Arrays.stream(sourceAttributeIndices)

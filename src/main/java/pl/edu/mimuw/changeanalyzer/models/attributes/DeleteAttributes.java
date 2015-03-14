@@ -11,23 +11,25 @@ import weka.core.Instances;
  * 
  * @author Adam Wierzbicki
  */
-public class DeleteAttributes extends AttributeProcessor {
+public class DeleteAttributes implements AttributeProcessor {
 
+	private int[] attributeIndices;
+	
 	/**
 	 * Construct a new DeleteAttributes processor.
 	 * 
-	 * @param sourceAttributeIndices Indices of attributes to be removed by this processor.
+	 * @param attributeIndices Indices of attributes to be removed by this processor.
 	 */
-	public DeleteAttributes(int[] sourceAttributeIndices) {
-		super(sourceAttributeIndices, null);
-		Arrays.sort(this.sourceAttributeIndices);
+	public DeleteAttributes(int[] attributeIndices) {
+		this.attributeIndices = attributeIndices;
+		Arrays.sort(this.attributeIndices);
 	}
 
 	@Override
 	public Instances processAttributes(Instances data) throws ProcessingException {
 		Instances result = new Instances(data);
-		for (int i = this.sourceAttributeIndices.length - 1; i >=0; --i) {
-			result.deleteAttributeAt(this.sourceAttributeIndices[i]);
+		for (int i = this.attributeIndices.length - 1; i >=0; --i) {
+			result.deleteAttributeAt(this.attributeIndices[i]);
 		}
 		return result;
 	}

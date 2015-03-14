@@ -7,6 +7,7 @@ import pl.edu.mimuw.changeanalyzer.models.DataSetProcessor;
 import pl.edu.mimuw.changeanalyzer.models.attributes.AttributeProcessor;
 import pl.edu.mimuw.changeanalyzer.models.attributes.Attributes;
 import pl.edu.mimuw.changeanalyzer.models.attributes.DeleteAttributes;
+import pl.edu.mimuw.changeanalyzer.models.attributes.ReorderClassAttribute;
 import pl.edu.mimuw.changeanalyzer.models.attributes.SumAttributes;
 import weka.core.Attribute;
 import weka.core.Instances;
@@ -146,6 +147,9 @@ public class StandardDataSetProcessor implements DataSetProcessor {
 		
 		AttributeProcessor deleteProcessor = new DeleteAttributes(this.allDeleteIndices);
 		dataSet = deleteProcessor.processAttributes(dataSet);
+		
+		AttributeProcessor reorderProcessor = new ReorderClassAttribute(this.classAttrName);
+		dataSet = reorderProcessor.processAttributes(dataSet);
 
 		return dataSet;
 	}
