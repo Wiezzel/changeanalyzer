@@ -19,8 +19,22 @@ import weka.core.converters.Saver;
 import ch.uzh.ifi.seal.changedistiller.model.entities.ClassHistory;
 
 
+/**
+ * Class for performing classifier evaluation experiments. It extracts
+ * from repositories and saves unprocessed data sets.
+ * 
+ * @author Adam Wierzbicki
+ */
 public class ExtractAndSave {
 	
+	/**
+	 * Extract data from a repository and save it under the given path.
+	 * 
+	 * @param repository Directory to extract data from
+	 * @param resultPath Path to save the extracted data
+	 * @throws IOException
+	 * @throws ChangeAnalyzerException
+	 */
 	private static void extractAndSave(File repository, String resultPath)
 			throws IOException, ChangeAnalyzerException {
 		
@@ -33,7 +47,7 @@ public class ExtractAndSave {
 		
 		StandardDataSetBuilder builder = new StandardDataSetBuilder();
 		Instances cgDataSet = builder
-				.addMeasure(new GeometricMeasure(0.7))
+				.addMeasure(new GeometricMeasure(0.5))
 				.addMeasure(new LinearMeasure(0.0))
 				.addMeasure(new WeightedMeasure())
 				.readCommits(commits)
@@ -46,6 +60,13 @@ public class ExtractAndSave {
 				repository.getAbsolutePath(), resultPath, execTime);
 	}
 	
+	/**
+	 * Save a data set.
+	 * 
+	 * @param dataSet	Data set to be saved
+	 * @param path		Path to save the data det
+	 * @throws IOException
+	 */
 	private static void saveDataSet(Instances dataSet, String path) throws IOException {
 		Saver saver = new ArffSaver();
 		saver.setInstances(dataSet);
@@ -53,6 +74,13 @@ public class ExtractAndSave {
 		saver.writeBatch();
 	}
 	
+	/**
+	 * Run {@link #extractAndSave(File, String)} method, catching all exceptions
+	 * and printing the to the stderr.
+	 * 
+	 * @param repository
+	 * @param resultPath
+	 */
 	private static void safeExtractAndSave(File repository, String resultPath) {
 		try {
 			extractAndSave(repository, resultPath);
@@ -61,6 +89,16 @@ public class ExtractAndSave {
 		}
 	}
 	
+	/**
+	 * Extract data from repositories and save it. Extract data contains
+	 * three separate bug-proneness measures: linBugProneness0.0, geomBugProneness0.5
+	 * and weightBugProneness. For each repository the extracted data will saved to
+	 * file with the same name as repository main folder's name (with .arff extension).
+	 *  
+	 * @param args Paths to repositories
+	 * @throws IOException
+	 * @throws ChangeAnalyzerException
+	 */
 	public static void main(String[] args) throws IOException, ChangeAnalyzerException {
 		for (int i = 0; i < args.length; ++i) {
 			File repository = new File(args[i]);

@@ -101,7 +101,7 @@ additionalFeatureCols = c(
 
 bugPronenessCols = c(
   "linBugProneness0.0",
-  "geomBugProneness0.7",
+  "geomBugProneness0.5",
   "weightBugProneness"
 )
 
