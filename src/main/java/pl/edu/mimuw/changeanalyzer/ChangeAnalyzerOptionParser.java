@@ -17,6 +17,12 @@ import org.apache.commons.cli2.validation.NumberValidator;
 import pl.edu.mimuw.changeanalyzer.models.measures.BugPronenessMeasure;
 import pl.edu.mimuw.changeanalyzer.models.measures.GeometricMeasure;
 import pl.edu.mimuw.changeanalyzer.models.measures.LinearMeasure;
+import weka.classifiers.Classifier;
+import weka.classifiers.functions.LibSVM;
+import weka.classifiers.functions.MultilayerPerceptron;
+import weka.classifiers.trees.M5P;
+import weka.classifiers.trees.RandomForest;
+import weka.core.SelectedTag;
 
 
 /**
@@ -42,6 +48,10 @@ public class ChangeAnalyzerOptionParser {
 	private Option classify;
 	private Option linMeasure;
 	private Option geomMeasure;
+	private Option decisionTree;
+	private Option randomForest;
+	private Option svm;
+	private Option neuralNet;
 	
 	private Parser parser;
 	private CommandLine commandLine;
@@ -146,6 +156,36 @@ public class ChangeAnalyzerOptionParser {
 				.withRequired(true)
 				.create();
 		
+		this.decisionTree = optBuilder
+				.withLongName("decision-tree")
+				.withShortName("d")
+				.withDescription("Use decision tree for classification")
+				.create();
+		this.randomForest = optBuilder
+				.withLongName("random-forest")
+				.withShortName("f")
+				.withDescription("Use random forest for classification")
+				.create();
+		this.svm = optBuilder
+				.withLongName("svm")
+				.withShortName("v")
+				.withDescription("Use SVM for classification")
+				.create();
+		this.neuralNet = optBuilder
+				.withLongName("neural-net")
+				.withShortName("n")
+				.withDescription("Use neural net for classification")
+				.create();
+		Group classifiers = groupBuilder
+				.withOption(this.decisionTree)
+				.withOption(this.randomForest)
+				.withOption(this.svm)
+				.withOption(this.neuralNet)
+				.withMinimum(1)
+				.withMaximum(1)
+				.withRequired(true)
+				.create();
+		
 		this.save = optBuilder
 				.withLongName("save")
 				.withShortName("s")
@@ -157,6 +197,7 @@ public class ChangeAnalyzerOptionParser {
 				.withShortName("c")
 				.withDescription("Classify methods and save results")
 				.withArgument(classPath)
+				.withChildren(classifiers)
 				.create();
 		Group outputOptions = groupBuilder
 				.withOption(this.save)
@@ -311,6 +352,28 @@ public class ChangeAnalyzerOptionParser {
 		}
 		Number initBugProneness = (Number) this.commandLine.getValue(this.linMeasure, DEFAULT_INIT_PRONENESS);
 		return new LinearMeasure(initBugProneness.doubleValue());
+	}
+	
+	/**
+	 * Get the classifier specified in arguments parsed by this parser.
+	 * 
+	 * @return Specified classifier
+	 * @throws IllegalStateException if arguments have not been parsed
+	 */
+	public Classifier getClassifier() {
+		this.assertParsed();
+		if (this.commandLine.hasOption(this.decisionTree)) {
+			return new M5P();
+		} else if (this.commandLine.hasOption(this.randomForest)) {
+			return new RandomForest();
+		} else if (this.commandLine.hasOption(this.svm)) {
+			LibSVM svm = new LibSVM();
+			svm.setSVMType(new SelectedTag(LibSVM.SVMTYPE_EPSILON_SVR, LibSVM.TAGS_SVMTYPE));
+			return svm;
+		} else if (this.commandLine.hasOption(this.neuralNet)) {
+			return new MultilayerPerceptron();
+		}
+		return null;
 	}
 
 	/**

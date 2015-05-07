@@ -15,7 +15,6 @@ import pl.edu.mimuw.changeanalyzer.models.ReadOnlyDataSetProvider;
 import pl.edu.mimuw.changeanalyzer.models.standard.StandardDataSetProvider;
 import weka.classifiers.Classifier;
 import weka.classifiers.meta.FilteredClassifier;
-import weka.classifiers.trees.RandomForest;
 import weka.core.Instance;
 import weka.core.Instances;
 import weka.core.converters.ArffSaver;
@@ -175,7 +174,7 @@ public class ChangeAnalyzer {
 		DataSetProvider provider = parser.hasExtractOption()
 				? StandardDataSetProvider.getInstance(parser.getMeasure())
 				: new ReadOnlyDataSetProvider();
-		Classifier classifier = new RandomForest();
+		Classifier classifier = parser.getClassifier();
 		ChangeAnalyzer analyzer = new ChangeAnalyzer(provider, classifier);
 		
 		if (parser.hasExtractOption()) {
