@@ -17,6 +17,7 @@ import org.apache.commons.cli2.validation.NumberValidator;
 import pl.edu.mimuw.changeanalyzer.models.measures.BugPronenessMeasure;
 import pl.edu.mimuw.changeanalyzer.models.measures.GeometricMeasure;
 import pl.edu.mimuw.changeanalyzer.models.measures.LinearMeasure;
+import pl.edu.mimuw.changeanalyzer.models.measures.WeightedMeasure;
 import weka.classifiers.Classifier;
 import weka.classifiers.functions.LibSVM;
 import weka.classifiers.functions.MultilayerPerceptron;
@@ -48,6 +49,7 @@ public class ChangeAnalyzerOptionParser {
 	private Option classify;
 	private Option linMeasure;
 	private Option geomMeasure;
+	private Option weightMeasure;
 	private Option decisionTree;
 	private Option randomForest;
 	private Option svm;
@@ -116,20 +118,26 @@ public class ChangeAnalyzerOptionParser {
 				.create();
 		
 		this.linMeasure = optBuilder
-				.withLongName("linear-measure")
+				.withLongName("linear")
 				.withShortName("l")
 				.withDescription("Use linear bug-proneness measure")
 				.withArgument(initBugProneness)
 				.create();
 		this.geomMeasure = optBuilder
-				.withLongName("geometric-measure")
+				.withLongName("geometric")
 				.withShortName("g")
 				.withDescription("Use geometric bug-proneness measure")
 				.withArgument(decreaseRatio)
 				.create();
+		this.weightMeasure = optBuilder
+				.withLongName("weighted")
+				.withShortName("w")
+				.withDescription("Use weighted bug-proneness measure")
+				.create();
 		Group measures = groupBuilder
 				.withOption(this.linMeasure)
 				.withOption(this.geomMeasure)
+				.withOption(this.weightMeasure)
 				.withMinimum(1)
 				.withMaximum(1)
 				.withRequired(true)
@@ -349,9 +357,13 @@ public class ChangeAnalyzerOptionParser {
 		if (this.commandLine.hasOption(this.geomMeasure)) {
 			Number decreaseRatio = (Number) this.commandLine.getValue(this.geomMeasure, DEFAULT_DECR_RATIO);
 			return new GeometricMeasure(decreaseRatio.doubleValue());
+		} else if (this.commandLine.hasOption(this.linMeasure)) {
+			Number initBugProneness = (Number) this.commandLine.getValue(this.linMeasure, DEFAULT_INIT_PRONENESS);
+			return new LinearMeasure(initBugProneness.doubleValue());
+		} else if (this.commandLine.hasOption(this.weightMeasure)) {
+			return new WeightedMeasure();
 		}
-		Number initBugProneness = (Number) this.commandLine.getValue(this.linMeasure, DEFAULT_INIT_PRONENESS);
-		return new LinearMeasure(initBugProneness.doubleValue());
+		throw new IllegalStateException("No bug-proneness measure defined");
 	}
 	
 	/**
@@ -373,7 +385,7 @@ public class ChangeAnalyzerOptionParser {
 		} else if (this.commandLine.hasOption(this.neuralNet)) {
 			return new MultilayerPerceptron();
 		}
-		return null;
+		throw new IllegalStateException("No classifier defined");
 	}
 
 	/**
