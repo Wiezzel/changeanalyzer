@@ -1,0 +1,9 @@
+pl.edu.mimuw.changeanalyzer
+pl.edu.mimuw.changeanalyzer.exceptions
+pl.edu.mimuw.changeanalyzer.extraction
+pl.edu.mimuw.changeanalyzer.io
+pl.edu.mimuw.changeanalyzer.models
+pl.edu.mimuw.changeanalyzer.models.attributes
+pl.edu.mimuw.changeanalyzer.models.measures
+pl.edu.mimuw.changeanalyzer.models.standard
+pl.edu.mimuw.changeanalyzer.util
