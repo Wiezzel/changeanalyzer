@@ -1,4 +1,4 @@
-## Loading libraries
+# Load libraries
 
 library(foreign)
 library(cvTools)
@@ -8,14 +8,14 @@ library(rpart)
 library(e1071)
 library(nnet)
 
-## Informational columns
+# Informational columns
 
 infoCols = c(
   "methodName",
   "commitId"
 )
 
-## Uninteresting columns to be discardeds
+# Uninteresting columns to be discarded
 
 discardCols = c(
   "ADDING_ATTRIBUTE_MODIFIABILITY",
@@ -47,7 +47,7 @@ discardCols = c(
   "UNCLASSIFIED_CHANGE"
 )
 
-## Change columns to be used as raw features
+# Change columns to be used as raw features
 
 rawChangeCols = c(
   "ALTERNATIVE_PART_DELETE",
@@ -60,7 +60,7 @@ rawChangeCols = c(
   "STATEMENT_UPDATE"
 )
 
-## Parameter change columns
+# Parameter change columns
 
 paramChangeCols = c(
   "PARAMETER_DELETE",
@@ -70,7 +70,7 @@ paramChangeCols = c(
   "PARAMETER_TYPE_CHANGE"
 )
 
-## Other method header change columns
+# Header change columns
 
 headerChangeCols = c(
   "ADDING_METHOD_OVERRIDABILITY",
@@ -83,7 +83,7 @@ headerChangeCols = c(
   "RETURN_TYPE_INSERT"
 )
 
-## Additional features
+# Additional features
 
 additionalFeatureCols = c(
   "numCommits",
@@ -97,7 +97,7 @@ additionalFeatureCols = c(
   "timeSinceLastFix"
 )
 
-## Bug-proneness columns
+# Bug-proneness columns
 
 bugPronenessCols = c(
   "linBugProneness0.0",
@@ -105,7 +105,8 @@ bugPronenessCols = c(
   "weightBugProneness"
 )
 
-## Function for reading data, preprocessing features & filtering instances
+# A function for reading data, preprocessing features 
+# and filtering instances
 
 readTrainData = function(filePath) {
   data = read.arff(filePath)
@@ -114,14 +115,17 @@ readTrainData = function(filePath) {
   rawChanges = data[rawChangeCols]
   paramsChanges = apply(data[paramChangeCols], 1, sum)
   headerChanges = apply(data[headerChangeCols], 1, sum)
-  additionalFeatures = data[additionalFeatureCols[additionalFeatureCols %in% colnames(data)]]
+  additionalFeatures = data[additionalFeatureCols[
+    additionalFeatureCols %in% colnames(data)]]
   
-  trainData = cbind(rawChanges, additionalFeatures, bugProneness,
-                    paramsChange = paramsChanges, headerChange = headerChanges)
+  trainData = cbind(
+    rawChanges, additionalFeatures, bugProneness,
+    paramsChange = paramsChanges, headerChange = headerChanges
+  )
   trainData[complete.cases(bugProneness),]
 }
 
-## Functions for performing cross-validation of various models
+# Functions for performing cross-validation of various models
 
 performCV = function(trainData, classColName, ...) {
   x = trainData[, !names(trainData) %in% bugPronenessCols]
@@ -129,44 +133,42 @@ performCV = function(trainData, classColName, ...) {
   trainData = cbind(x, class=y)
   complete = complete.cases(trainData)
   
-  forestCV = suppressWarnings(cvFit(randomForest, class~., trainData, ...))$cv
-  treeCV = suppressWarnings(cvFit(rpart, class~., trainData, ...))$cv
-  svmCV = suppressWarnings(cvFit(svm, class~., trainData, ...))$cv
-  nnetCV = suppressWarnings(cvFit(nnet, x=x[complete,], y=y[complete], args=c(size=10, linout=T, trace=F), ...))$cv
+  forestCV = suppressWarnings(
+    cvFit(randomForest, class~., trainData, ...))$cv
+  treeCV = suppressWarnings(
+    cvFit(rpart, class~., trainData, ...))$cv
+  svmCV = suppressWarnings(
+    cvFit(svm, class~., trainData, ...))$cv
+  nnetCV = suppressWarnings(
+    cvFit(nnet, x=x[complete,], y=y[complete],
+          args=c(size=10, linout=T, trace=F), ...))$cv
   
   c(forest=forestCV, tree=treeCV, svm=svmCV, nnet=nnetCV)
 }
 
 performAllCV = function(trainData, K=20, R=10, seed=12345, ...) {
-  sapply(bugPronenessCols, function(col) performCV(trainData, classColName = col, K=K, ...))
+  sapply(bugPronenessCols, function(col) performCV(
+    trainData, classColName = col, K=K, R=R, ...
+  ))
 }
 
-## Read data extracted from repositories
+# Read data extracted from repositories
 
-commonsLang = readTrainData("commons-lang.arff")
-guava = readTrainData("guava.arff")
-hibernate = readTrainData("hibernate.arff")
-jetty = readTrainData("jetty.arff")
-jgit = readTrainData("jgit.arff")
-junit = readTrainData("junit.arff")
-log4j = readTrainData("log4j.arff")
-maven = readTrainData("maven.arff")
-mockito = readTrainData("mockito.arff")
-spring = readTrainData("spring.arff")
+dataSets = list(
+  commonsLang = readTrainData("commons-lang.arff"),
+  guava = readTrainData("guava.arff"),
+  hibernate = readTrainData("hibernate.arff"),
+  jetty = readTrainData("jetty.arff"),
+  jgit = readTrainData("jgit.arff"),
+  junit = readTrainData("junit.arff"),
+  log4j = readTrainData("log4j.arff"),
+  maven = readTrainData("maven.arff"),
+  mockito = readTrainData("mockito.arff"),
+  spring = readTrainData("spring.arff")
+)
+sizes = sapply(dataSets, nrow)
 
-## Perform some experiments
+# Perform experiments and aggregate the results
 
-commonsLangCV = performAllCV(commonsLang)
-guavaCV = performAllCV(guava)
-hibernateCV = performAllCV(hibernate)
-jettyCV = performAllCV(jetty)
-jgitCV = performAllCV(jgit)
-junitCV = performAllCV(junit)
-log4jCV = performAllCV(log4j)
-mavenCV = performAllCV(maven)
-mockitoCV = performAllCV(mockito)
-springCV = performAllCV(spring)
-
-allResults = list(commonsLang=commonsLangCV, guava=guavaCV, hibernate=hibernateCV, jetty=jettyCV, jgit=jgitCV,
-                  junit=junitCV, log4j=log4jCV, maven=mavenCV, mockito=mockitoCV, spring=springCV)
-avgResults = apply(simplify2array(allResults), c(1,2), mean)
+results = lapply(dataSets, performAllCV)
+avgResults = apply(simplify2array(results), c(1,2), mean)
